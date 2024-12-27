@@ -388,9 +388,27 @@ a:hover {
   border: 0px;
 }
 
+#instructionsContainer ul {
+  width: 700px;
+  list-style-type: none;
+  margin: 50px auto;
+  padding: 0;  
+}
+
 #instructionsContainer li {
-  cursor: move;
+  margin: 5px 5px;
+  padding: 1px;
+  float: left;
   width: 120px;
+  height: 90px;
+  font-size: 4em;
+  line-height: 2em;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  border: 1px solid #7ca6ba;
+  background-color: #5c5c5c;
+  color: #fffff2;
 }
 
 #instructionsContainer .ui-icon-close, li.ui-draggable-dragging .ui-icon-close {

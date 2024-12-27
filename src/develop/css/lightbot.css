@@ -390,6 +390,7 @@ a:hover {
 
 #instructionsContainer li {
   cursor: move;
+  width: 120px;
 }
 
 #instructionsContainer .ui-icon-close, li.ui-draggable-dragging .ui-icon-close {

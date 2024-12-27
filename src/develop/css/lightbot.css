@@ -251,19 +251,19 @@ a:hover {
 }
 
 #welcomeScreen .audioToggleButton {
-  right: 40px;
+  left: 40px;
 }
 
 #welcomeScreen .helpButton {
-  right: 75px;
+  left: 75px;
 }
 
 #welcomeScreen .achievementsButton {
-  right: 150px;
+  left: 150px;
 }
 
 #welcomeScreen .levelSelectButton {
-  right: 278px;
+  left: 278px;
   border-width: 2px;
 }
 
@@ -379,7 +379,7 @@ a:hover {
 #instructionsContainer {
   position: absolute;
   top: 1px;
-  right: 1px;
+  left: 1px;
   width: 100%;
   height: 220px;
   background-color: #4B4646;
@@ -407,8 +407,8 @@ a:hover {
 #programContainer {
   position: absolute;
   bottom: 1px;
-  right: 1px;
-  width: 286px;
+  left: 1px;
+  width: 100%;
   height: 476px;
   background-color: #4B4646;
 }
@@ -524,6 +524,6 @@ li.ui-draggable-dragging {
 #videoContainer {
   position: absolute;
   top: 175px;
-  right: 40px;
+  left: 40px;
   width: 400px;
 }

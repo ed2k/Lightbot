@@ -46,6 +46,7 @@ $(document).ready(function() {
       $('#programContainer ul').append(localStorage.getItem('lightbot_program_level_' + lightBot.map.getLevelNumber())).find('*').removeClass('ui-state-hover ui-state-droppable');
       this.makeDroppable();
     },
+    // add from instrunction area clicked command to program area
     dropCommand: function(ui) {
       console.log("nodrag", ui)
       $( this ).children( ".placeholder" ).remove();
@@ -54,6 +55,9 @@ $(document).ready(function() {
       console.log("editor", this);
       console.log("input", ui.text());
       var cmd = $('<button>'+ui.text()+'</button>')
+      cmd.live({
+        'click': function () {$(this).remove();}
+      });
       if (this.focusAreaName === "procOne") {
         cmd.appendTo('#procOneList')
       } else if (this.focusAreaName === "procTwo") {

@@ -47,6 +47,11 @@ $(document).ready(function() {
     'click': function () {lightBot.ui.showGameScreen($(this).text());}
   });
 
+    // show game screen buttons
+    $('#instructionsContainer div ul li').live({
+      'click': function () {lightBot.ui.addCommand($(this).text());}
+    });
+
   // audio toggle buttons
   $('.audioToggleButton').button({
     icons: {

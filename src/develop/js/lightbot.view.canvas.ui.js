@@ -80,6 +80,9 @@
       $('.ui-screen').hide();
       $('#levelSelectScreen').show();
     },
+    addCommandf: function(command) {
+      console.log(command);
+    },
     showGameScreen: function(level, hist) {
       lightBot.ui.media.playGameAudio();
 

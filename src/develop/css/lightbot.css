@@ -422,26 +422,26 @@ a:hover {
 /* ===[ Program Container ]=== */
 #procOneContainer {
   position: absolute;
-  top: 414px;
+  top: 320px;
   left: 1px;
   width: 100%;
-  height: 176px;
+  height: 120px;
   background-color: #4B4646;
 }
 #procTwoContainer {
   position: absolute;
-  top: 614px;
+  top: 440px;
   left: 1px;
   width: 100%;
-  height: 176px;
+  height: 120px;
   background-color: #4B4646;
 }
 #programContainer {
   position: absolute;
-  top: 214px;
+  top: 200px;
   left: 1px;
   width: 100%;
-  height: 176px;
+  height: 120px;
   background-color: #4B4646;
 }
 

@@ -45,6 +45,19 @@ $(document).ready(function() {
       $('#programContainer ul').append(localStorage.getItem('lightbot_program_level_' + lightBot.map.getLevelNumber())).find('*').removeClass('ui-state-hover ui-state-droppable');
       this.makeDroppable();
     },
+    dropCommand: function(ui) {
+      var clone = $(ui.draggable.clone()).removeClass("ui-draggable");
+      clone.appendTo( this );
+
+      // if the target area was the "main" programContainer ul, scroll to the bottom
+      var tmp = $(this).parent();
+      if (tmp.parent().is('#programContainer')) {
+        tmp.animate({ scrollTop: tmp.height() }, "slow");
+      }
+
+      // save the program
+      lightBot.ui.editor.saveProgram();
+    },
     // this function makes "repeat" instructions a droppable area
     makeDroppable: function() {
       $("#programContainer ul").droppable({

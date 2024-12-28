@@ -47,10 +47,10 @@ $(document).ready(function() {
     'click': function () {lightBot.ui.showGameScreen($(this).text());}
   });
 
-    // show game screen buttons
-    $('#instructionsContainer div ul li').live({
-      'click': function () {lightBot.ui.addCommand($(this).text());}
-    });
+  // add instruction command to program area
+  $('#instructionsContainer div ul li').live({
+    'click': function () {lightBot.ui.editor.dropCommand($(this));}
+  });
 
   // audio toggle buttons
   $('.audioToggleButton').button({

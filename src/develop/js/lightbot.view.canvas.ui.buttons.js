@@ -52,6 +52,19 @@ $(document).ready(function() {
     'click': function () {lightBot.ui.editor.dropCommand($(this));}
   });
 
+  // change focus of program area to main
+  $('#procMain').live({
+    'click': function () {lightBot.ui.editor.focusProgram('procMain');}
+  });
+  // change focus of program area to proc1
+  $('#procOne').live({
+    'click': function () {lightBot.ui.editor.focusProgram('procOne');}
+  });
+  // change focus of program area to proc2
+  $('#procTwo').live({
+    'click': function () {lightBot.ui.editor.focusProgram('procTwo');}
+  });
+
   // audio toggle buttons
   $('.audioToggleButton').button({
     icons: {

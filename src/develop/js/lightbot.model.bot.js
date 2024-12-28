@@ -8,6 +8,8 @@
     startingDirection: lightBot.directions.se, // save initial direction for reset
     direction: lightBot.directions.se, // current direction the bot is facing
     instructionQueue: [], // saves the instruction queue. useful for post-executing analysis
+    procOneQueue: [],
+    procTwoQueue: [],
     executionQueue: [], // current instruction execution queue
     executionMode: false, // boolean flag indicating whether the bot is in execution mode
     init: function(direction, position) {

@@ -34,6 +34,7 @@ $(document).ready(function() {
 (function() {
 
   var editor = {
+    focusAreaName: "procMain",
     // this function saves the current program in the localStorage
     saveProgram: function() {
       $('#programContainer ul').find(':input[type="number"]').each(function(){
@@ -62,6 +63,23 @@ $(document).ready(function() {
 
       // save the program
       lightBot.ui.editor.saveProgram();
+    },
+    focusProgram: function(areaName) {
+      this.focusAreaName = areaName;
+      var focusUI = $('#programContainer')
+      var otherA = $('#procOneContainer')
+      var otherB = $('#procTwoContainer')
+      if (areaName === "procOne") {
+        focusUI = $('#procOneContainer')
+        otherA = $('#programContainer')
+      } else if (areaName === "procTwo") {
+        focusUI = $('#procTwoContainer')
+        otherB = $('#programContainer')
+      }
+      otherA.removeClass("ui-state-droppable")
+      otherB.removeClass("ui-state-droppable")
+      focusUI.removeClass("ui-state-droppable")
+      focusUI.addClass("ui-state-droppable")
     },
     // this function makes "repeat" instructions a droppable area
     makeDroppable: function() {

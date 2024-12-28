@@ -53,8 +53,14 @@ $(document).ready(function() {
       clone.appendTo( this );
       console.log("editor", this);
       console.log("input", ui.text());
-
-      $('<button>'+ui.text()+'</button>').appendTo('#mainList')
+      var cmd = $('<button>'+ui.text()+'</button>')
+      if (this.focusAreaName === "procOne") {
+        cmd.appendTo('#procOneList')
+      } else if (this.focusAreaName === "procTwo") {
+        cmd.appendTo('#procTwoList')
+      } else {
+        cmd.appendTo('#mainList')
+      }
       // if the target area was the "main" programContainer ul, scroll to the bottom
       var tmp = $(this).parent();
       if (tmp.parent().is('#programContainer')) {

@@ -55,8 +55,9 @@ $(document).ready(function() {
       console.log("editor", this);
       console.log("input", ui.text());
       var cmd = $('<button>'+ui.text()+'</button>')
-      cmd.live({
-        'click': function () {$(this).remove();}
+      cmd.click(function () {
+        console.log('remove', this);
+        $(this).remove();
       });
       if (this.focusAreaName === "procOne") {
         cmd.appendTo('#procOneList')

@@ -80,7 +80,7 @@
       $('.ui-screen').hide();
       $('#levelSelectScreen').show();
     },
-    addCommandf: function(command) {
+    addCommand: function(command) {
       console.log(command);
     },
     showGameScreen: function(level, hist) {

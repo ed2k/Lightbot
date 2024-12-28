@@ -46,8 +46,11 @@ $(document).ready(function() {
       this.makeDroppable();
     },
     dropCommand: function(ui) {
-      var clone = $(ui.draggable.clone()).removeClass("ui-draggable");
+      console.log("nodrag", ui)
+      var clone = $(ui.clone()).removeClass("ui-draggable");
       clone.appendTo( this );
+      console.log("editor", this);
+      console.log("input", ui)
 
       // if the target area was the "main" programContainer ul, scroll to the bottom
       var tmp = $(this).parent();

@@ -47,11 +47,13 @@ $(document).ready(function() {
     },
     dropCommand: function(ui) {
       console.log("nodrag", ui)
+      $( this ).children( ".placeholder" ).remove();
       var clone = $(ui.clone()).removeClass("ui-draggable");
       clone.appendTo( this );
       console.log("editor", this);
-      console.log("input", ui)
+      console.log("input", ui.text());
 
+      $('<button>'+ui.text()+'</button>').appendTo('#mainList')
       // if the target area was the "main" programContainer ul, scroll to the bottom
       var tmp = $(this).parent();
       if (tmp.parent().is('#programContainer')) {
@@ -69,6 +71,7 @@ $(document).ready(function() {
         hoverClass: "ui-state-droppable-hover",
         accept: ":not(.ui-sortable-helper)",
         drop: function( event, ui ) {
+          console.log("drophere", this);
           $( this ).children( ".placeholder" ).remove();
           var clone = $(ui.draggable.clone()).removeClass("ui-draggable");
           clone.appendTo( this );

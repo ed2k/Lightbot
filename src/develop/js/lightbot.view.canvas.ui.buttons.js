@@ -88,7 +88,9 @@ $(document).ready(function() {
       $(this).button('option', {label: 'Run', icons: {primary: 'ui-icon-play'}}).removeClass('ui-state-highlight');
     } else {
       var instructions = lightBot.ui.editor.getInstructions($('#programContainer > div > ul > li'));
-      lightBot.bot.queueInstructions(instructions);
+      var procOne = lightBot.ui.editor.getInstructions($('#procOneContainer > div > ul > li'));
+      var procTwo = lightBot.ui.editor.getInstructions($('#procTwoContainer > div > ul > li'));
+      lightBot.bot.queueInstructions(instructions, procOne, procTwo);
       lightBot.bot.execute();
 
       $(this).button('option', {label: 'Stop', icons: {primary: 'ui-icon-stop'}}).addClass('ui-state-highlight');

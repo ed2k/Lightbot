@@ -33,6 +33,16 @@
   instructions.TurnRightInstruction.prototype = new Instruction(instructions.TurnRightInstruction.instructionName);
   instructions.TurnRightInstruction.prototype.constructor = instructions.TurnRightInstruction;
 
+  instructions.ProcOneInstruction = function() {};
+  instructions.ProcOneInstruction.instructionName = 'proc1';
+  instructions.ProcOneInstruction.prototype = new Instruction(instructions.ProcOneInstruction.instructionName);
+  instructions.ProcOneInstruction.prototype.constructor = instructions.ProcOneInstruction;
+
+  instructions.ProcTwoInstruction = function() {};
+  instructions.ProcTwoInstruction.instructionName = 'proc2';
+  instructions.ProcTwoInstruction.prototype = new Instruction(instructions.ProcTwoInstruction.instructionName);
+  instructions.ProcTwoInstruction.prototype.constructor = instructions.ProcTwoInstruction;
+
   instructions.RepeatInstruction = function(counter, body) {
     this.counter = counter;
     this.body = body;

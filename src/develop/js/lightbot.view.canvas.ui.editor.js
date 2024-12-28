@@ -54,7 +54,7 @@ $(document).ready(function() {
       clone.appendTo( this );
       console.log("editor", this);
       console.log("input", ui.text());
-      var cmd = $('<button>'+ui.text()+'</button>')
+      var cmd = $('<li>'+ui.text()+'</li>')
       cmd.click(function () {
         console.log('remove', this);
         $(this).remove();
@@ -154,6 +154,12 @@ $(document).ready(function() {
           case 'turnRight':
             instructions.push(new lightBot.bot.instructions.TurnRightInstruction());
             break;
+          case 'proc1':
+            instructions.push(new lightBot.bot.instructions.ProcOneInstruction());
+            break
+          case 'proc2':
+            instructions.push(new lightBot.bot.instructions.ProcTwoInstruction());
+            break
           case 'repeat':
             var counter = $(this).children('p').children('span').children('input').val();
             var body = lightBot.ui.editor.getInstructions($(this).children('div').children('div').children('ul').children('li'));

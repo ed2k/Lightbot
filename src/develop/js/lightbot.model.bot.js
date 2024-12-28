@@ -32,8 +32,10 @@
     queueInstruction: function(instruction) {
       this.instructionQueue.push(instruction);
     },
-    queueInstructions: function(instructions) {
+    queueInstructions: function(instructions, proc1, proc2) {
       this.instructionQueue = this.instructionQueue.concat(instructions);
+      this.procOneQueue = this.procOneQueue.concat(proc1);
+      this.procTwoQueue = this.procTwoQueue.concat(proc2);
     },
     hasNextInstruction: function() {
       return (this.executionQueue.length > 0);

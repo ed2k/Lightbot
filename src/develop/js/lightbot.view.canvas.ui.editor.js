@@ -26,9 +26,6 @@ $(document).ready(function() {
   $('#instructionsContainer, #programContainer').delegate('li', 'hover', function() {
     $(this).toggleClass('ui-state-hover');
   });
-
-  // make instructions droppable and sortable
-  lightBot.ui.editor.makeDroppable();
 });
 
 (function() {
@@ -37,12 +34,14 @@ $(document).ready(function() {
     focusAreaName: "procMain",
     // this function saves the current program in the localStorage
     saveProgram: function() {
+      // TODO save all three programs
       $('#programContainer ul').find(':input[type="number"]').each(function(){
         $(this).attr('value', $(this).val());
       });
       localStorage.setItem('lightbot_program_level_' + lightBot.map.getLevelNumber(), $('#programContainer ul').html());
     },
     loadProgram: function() {
+      // TODO load from all three programs, add click to delete
       $('#programContainer ul').append(localStorage.getItem('lightbot_program_level_' + lightBot.map.getLevelNumber())).find('*').removeClass('ui-state-hover ui-state-droppable');
       this.makeDroppable();
     },

@@ -452,13 +452,13 @@ a:hover {
 }
 
 /* allows the droppable program container to show a scrollbar when the program fills up */
-#programContainer > div {
+#programContainer > div, #procOneContainer > div, #procTwoContainer > div {
   height: 64px;
   overflow: auto;
 }
 
 /* the droppable area should fill the entire programcontainer */
-#programContainer > div > ul {
+#programContainer > div > ul, , #procOneContainer > div > ul, #procTwoContainer > div > ul {
   min-height: 64px;
 }
 
@@ -489,7 +489,7 @@ a:hover {
   overflow: auto;
 }
 
-#instructionsContainer ul, #programContainer ul {
+#instructionsContainer ul, #programContainer ul, , #procOneContainer ul, #procTwoContainer ul {
   margin: 0em;
   list-style: none;
   padding: 5px;
@@ -499,7 +499,7 @@ a:hover {
   padding-bottom: 20px;
 }
 
-#instructionsContainer li, #programContainer li, li.ui-draggable-dragging {
+#instructionsContainer li, #programContainer li, #procOneContainer li, #procTwoContainer li, li.ui-draggable-dragging {
   list-style: none;
   border: 1px solid black;
   margin: 0 0 2px 0;

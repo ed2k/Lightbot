@@ -462,7 +462,7 @@ a:hover {
   min-height: 64px;
 }
 
-#programContainer li, #procOneContainer li, #procTwoContainer li {
+/* #programContainer li, #procOneContainer li, #procTwoContainer li {
   margin: 5px 5px;
   padding: 1px;
   float: left;
@@ -476,7 +476,7 @@ a:hover {
   border: 1px solid #7ca6ba;
   background-color: #5c5c5c;
   color: #fffff2;
-}
+} */
 
 /* sortable helper */
 #programContainer li.ui-state-highlight {

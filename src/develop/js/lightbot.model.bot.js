@@ -64,6 +64,16 @@
           case lightBot.bot.instructions.TurnRightInstruction.instructionName:
             this.turnRight();
             break;
+          case lightBot.bot.instructions.ProcOneInstruction.instructionName:
+            if (this.procOneQueue.length > 0) {
+              this.executionQueue = this.procOneQueue.concat(this.executionQueue)
+            }
+            break;
+          case lightBot.bot.instructions.ProcTwoInstruction.instructionName:
+            if (this.procTwoQueue.length > 0) {
+              this.executionQueue = this.procTwoQueue.concat(this.executionQueue)
+            }
+            break;
           case lightBot.bot.instructions.RepeatInstruction.instructionName:
             if (instruction.counter > 1) {
               instruction.counter--;

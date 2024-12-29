@@ -72,7 +72,7 @@ $(document).ready(function() {
       }
 
       // save the program
-      lightBot.ui.editor.saveProgram();
+      // lightBot.ui.editor.saveProgram();
     },
     focusProgram: function(areaName) {
       this.focusAreaName = areaName;

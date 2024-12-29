@@ -102,7 +102,7 @@
         lightBot.ui.editor.loadProgram();
       } else {
         //TODO properly append placeholder instruction to handle focus on one of programs
-        //$('#programContainer ul').append('<li class="ui-state-default placeholder"><p class="placeholder">Drop your instructions here</p></li>');
+        $('#programContainer ul').append('<li class="ui-state-default placeholder"><p class="placeholder"></p></li>');
       }
 
       // reset the run button

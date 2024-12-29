@@ -50,11 +50,11 @@ $(document).ready(function() {
     dropCommand: function(ui) {
       console.log("nodrag", ui)
       $( this ).children( ".placeholder" ).remove();
-      var clone = $(ui.clone()).removeClass("ui-draggable");
-      clone.appendTo( this );
-      console.log("editor", this);
+      var className = ui.children("p:first").attr("class");
+
       console.log("input", ui.text());
-      var cmd = $('<li>'+ui.text()+'</li>')
+      var cmd = $('<li><p>'+className+'</p></li>')
+      cmd.children("p:first").addClass(className);
       cmd.click(function () {
         console.log('remove', this);
         $(this).remove();

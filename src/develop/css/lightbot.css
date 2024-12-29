@@ -17,8 +17,8 @@ h1, h2, h3 {
 }
 
 h1 {
-  font-size: 31px;
-  margin: 40px;
+  font-size: 32px;
+  margin: 4px;
 }
 
 h2 {
@@ -391,7 +391,7 @@ a:hover {
 #instructionsContainer ul {
   width: 700px;
   list-style-type: none;
-  margin: 50px auto;
+  margin: 5px auto;
   padding: 0;  
 }
 

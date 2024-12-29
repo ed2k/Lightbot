@@ -88,10 +88,11 @@ $(document).ready(function() {
         focusUI = $('#procTwoContainer')
         otherB = $('#programContainer')
       }
-      otherA.removeClass("ui-state-droppable")
-      otherB.removeClass("ui-state-droppable")
-      focusUI.removeClass("ui-state-droppable")
-      focusUI.addClass("ui-state-droppable")
+      const focusStyleName = "ui-state-droppable-hover"
+      otherA.removeClass(focusStyleName)
+      otherB.removeClass(focusStyleName)
+      focusUI.removeClass(focusStyleName)
+      focusUI.addClass(focusStyleName)
     },
     // this function makes "repeat" instructions a droppable area
     makeDroppable: function() {

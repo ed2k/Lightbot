@@ -356,7 +356,7 @@ a:hover {
 
 #canvasContainer {
   position: absolute;
-  bottom: 32px;
+  bottom: 2px;
   left: 1px;
   width: 100%;
   height: 666px;
@@ -366,9 +366,9 @@ a:hover {
 #buttonContainer {
   position: absolute;
   left: 1px;
-  bottom: 1px;
+  bottom: 375px;
   width: 100%;
-  height: 30px;
+  height: 64px;
   background-color: #4B4646;
 }
 
@@ -570,4 +570,9 @@ li.ui-draggable-dragging {
   top: 175px;
   left: 40px;
   width: 400px;
+}
+
+#runButton {
+  width: 128px;
+  height: 64px;
 }

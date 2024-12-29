@@ -35,6 +35,7 @@ $(document).ready(function() {
     // this function saves the current program in the localStorage
     saveProgram: function() {
       // TODO save all three programs
+      return;
       $('#programContainer ul').find(':input[type="number"]').each(function(){
         $(this).attr('value', $(this).val());
       });
@@ -42,6 +43,7 @@ $(document).ready(function() {
     },
     loadProgram: function() {
       // TODO load from all three programs, add click to delete
+      return;
       $('#programContainer ul').append(localStorage.getItem('lightbot_program_level_' + lightBot.map.getLevelNumber())).find('*').removeClass('ui-state-hover ui-state-droppable');
       this.makeDroppable();
     },

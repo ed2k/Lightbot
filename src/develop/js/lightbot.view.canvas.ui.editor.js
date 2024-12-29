@@ -78,15 +78,18 @@ $(document).ready(function() {
     },
     focusProgram: function(areaName) {
       this.focusAreaName = areaName;
-      var focusUI = $('#programContainer')
-      var otherA = $('#procOneContainer')
-      var otherB = $('#procTwoContainer')
+      const mainIdName = "#procMain";
+      const oneIdName = "procOne";
+      const twoIdName = "procTwo";
+      var focusUI = $(mainIdName)
+      var otherA = $(oneIdName)
+      var otherB = $(twoIdName)
       if (areaName === "procOne") {
-        focusUI = $('#procOneContainer')
-        otherA = $('#programContainer')
+        focusUI = $(oneIdName)
+        otherA = $(mainIdName)
       } else if (areaName === "procTwo") {
-        focusUI = $('#procTwoContainer')
-        otherB = $('#programContainer')
+        focusUI = $(twoIdName)
+        otherB = $(mainIdName)
       }
       const focusStyleName = "ui-state-droppable-hover"
       otherA.removeClass(focusStyleName)

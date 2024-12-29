@@ -23,6 +23,8 @@
       this.currentPos = $.extend({}, this.startingPos);
       this.direction = this.startingDirection;
       this.instructionQueue.length = 0;
+      this.procOneQueue.length = 0;
+      this.procTwoQueue.length = 0;
       this.executionQueue.length = 0;
       this.executionMode = false;
     },

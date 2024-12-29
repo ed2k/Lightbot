@@ -489,7 +489,7 @@ a:hover {
   overflow: auto;
 }
 
-#instructionsContainer ul, #programContainer ul, , #procOneContainer ul, #procTwoContainer ul {
+#instructionsContainer ul, #programContainer ul, #procOneContainer ul, #procTwoContainer ul {
   margin: 0em;
   list-style: none;
   padding: 5px;

@@ -104,6 +104,8 @@ $(document).ready(function() {
     }
   }).click(function() {
     $('#programContainer ul').empty();
+    $('#procOneContainer ul').empty();
+    $('#procTwoContainer ul').empty();
     lightBot.ui.editor.saveProgram();
   });
 

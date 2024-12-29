@@ -179,7 +179,7 @@
         }
         return x;
       }
-      return count(this.instructionQueue);
+      return count(this.instructionQueue) + count(this.procOneQueue) + count(this.procTwoQueue);
     }
   };
 

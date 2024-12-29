@@ -462,39 +462,7 @@ a:hover {
   min-height: 64px;
 }
 
-#programContainer li {
-  margin: 5px 5px;
-  padding: 1px;
-  float: left;
-  width: 32px;
-  height: 32px;
-  font-size: 4em;
-  line-height: 2em;
-  text-align: center;
-  cursor: pointer;
-  position: relative;
-  border: 1px solid #7ca6ba;
-  background-color: #5c5c5c;
-  color: #fffff2;
-}
-
-#procOneContainer li {
-  margin: 5px 5px;
-  padding: 1px;
-  float: left;
-  width: 32px;
-  height: 32px;
-  font-size: 4em;
-  line-height: 2em;
-  text-align: center;
-  cursor: pointer;
-  position: relative;
-  border: 1px solid #7ca6ba;
-  background-color: #5c5c5c;
-  color: #fffff2;
-}
-
-#procTwoContainer li {
+#programContainer li, #procOneContainer li, #procTwoContainer li {
   margin: 5px 5px;
   padding: 1px;
   float: left;
@@ -542,7 +510,7 @@ a:hover {
   border-color: #7ca6ba;
 }
 
-#instructionsContainer li p, #programContainer li p, li.ui-draggable-dragging p {
+#instructionsContainer li p, #programContainer li p, #procOneContainer li p, #procTwoContainer li p, li.ui-draggable-dragging p {
   padding: 0px;
   margin: 0px;
   margin-bottom: 0.1em;

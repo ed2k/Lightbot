@@ -79,8 +79,8 @@ $(document).ready(function() {
     focusProgram: function(areaName) {
       this.focusAreaName = areaName;
       const mainIdName = "#procMain";
-      const oneIdName = "procOne";
-      const twoIdName = "procTwo";
+      const oneIdName = "#procOne";
+      const twoIdName = "#procTwo";
       var focusUI = $(mainIdName)
       var otherA = $(oneIdName)
       var otherB = $(twoIdName)

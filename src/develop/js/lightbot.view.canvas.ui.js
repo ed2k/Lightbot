@@ -101,8 +101,8 @@
       if (localStorage.getItem('lightbot_program_level_' + level)) {
         lightBot.ui.editor.loadProgram();
       } else {
-        //append placeholder instruction
-        $('#programContainer ul').append('<li class="ui-state-default placeholder"><p class="placeholder">Drop your instructions here</p></li>');
+        //TODO properly append placeholder instruction to handle focus on one of programs
+        //$('#programContainer ul').append('<li class="ui-state-default placeholder"><p class="placeholder">Drop your instructions here</p></li>');
       }
 
       // reset the run button

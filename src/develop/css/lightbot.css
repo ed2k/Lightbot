@@ -98,7 +98,7 @@ a:hover {
   font-family: 'PT Sans', sans-serif;
   font-weight: 700;
   color: #FFFFF2;
-  font-size: 13px;
+  font-size: 26px;
   line-height: 1.2;
 }
 
@@ -366,7 +366,7 @@ a:hover {
 #buttonContainer {
   position: absolute;
   left: 1px;
-  bottom: 375px;
+  top: 675px;
   width: 100%;
   height: 64px;
   background-color: #4B4646;
@@ -574,5 +574,5 @@ li.ui-draggable-dragging {
 
 #runButton {
   width: 128px;
-  height: 64px;
+  height: 60px;
 }

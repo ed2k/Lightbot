@@ -33,6 +33,11 @@ $(document).ready(function() {
   var editor = {
     focusAreaName: "procMain",
     // this function saves the current program in the localStorage
+    clearPrograms: function() {
+      $('#programContainer ul').empty();
+      $('#procOneContainer ul').empty();
+      $('#procTwoContainer ul').empty();
+    },
     saveProgram: function() {
       // TODO save all three programs
       return;
@@ -54,19 +59,8 @@ $(document).ready(function() {
       var className = ui.children("p:first").attr("class");
 
       console.log("input", ui.text());
-      var cmd = $('<li><p>'+className+'</p></li>')
-      cmd.children("p:first").addClass(className);
-      cmd.click(function () {
-        console.log('remove', this);
-        $(this).remove();
-      });
-      if (this.focusAreaName === "procOne") {
-        cmd.appendTo('#procOneList')
-      } else if (this.focusAreaName === "procTwo") {
-        cmd.appendTo('#procTwoList')
-      } else {
-        cmd.appendTo('#mainList')
-      }
+      this.addCommand(className, this.focusAreaName);
+
       // if the target area was the "main" programContainer ul, scroll to the bottom
       var tmp = $(this).parent();
       if (tmp.parent().is('#programContainer')) {
@@ -76,6 +70,22 @@ $(document).ready(function() {
       // save the program
       // lightBot.ui.editor.saveProgram();
     },
+    addCommand: function(cmdClassName, focusAreaName) {
+      var cmd = $('<li><p>'+cmdClassName+'</p></li>')
+      cmd.children("p:first").addClass(cmdClassName);
+      cmd.click(function () {
+        console.log('remove', this);
+        $(this).remove();
+      });
+      if (focusAreaName === "procOne") {
+        cmd.appendTo('#procOneList')
+      } else if (focusAreaName === "procTwo") {
+        cmd.appendTo('#procTwoList')
+      } else {
+        cmd.appendTo('#mainList')
+      }
+    },
+    // three focus area, procMain, procOne, procTwo, default to procMain
     focusProgram: function(areaName) {
       this.focusAreaName = areaName;
       const mainIdName = "#procMain";

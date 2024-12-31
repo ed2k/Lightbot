@@ -103,9 +103,7 @@ $(document).ready(function() {
       primary: "ui-icon-document"
     }
   }).click(function() {
-    $('#programContainer ul').empty();
-    $('#procOneContainer ul').empty();
-    $('#procTwoContainer ul').empty();
+    lightBot.ui.editor.clearPrograms();
     lightBot.ui.editor.saveProgram();
   });
 

@@ -321,17 +321,47 @@
       [{"h":4, "t":"l"}, {"h":3, "t":"b"},{"h":3, "t":"b"},{"h":7, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"}]
     ],
     "medals": {
-      "gold": 7,
-      "silver": 24,
+      "gold": 19,
+      "silver": 20,
       "bronze": 28
-    }
+    },
+    "programs": [
+      "pPPPRppFRP",
+      "PRR",
+      "FJFFJ?R"
+    ]
   },
-];
+  ];
 
   var levelSize = {'x': 0, 'y': 0}; // the level size
   var mapRef = null; // the actual map values
   var medals = null; // medals for the level
   var levelNumber = null; // what level is the user currently playing
+
+  map.translateCmdToClassName = function(cmd) {
+    switch(cmd) {
+      case 'J': return "jump";
+      case 'F': return "walk";
+      case 'L': return "turnLeft";
+      case 'R': return "turnRight";
+      case '?': return "light";
+      case 'p': return "proc1";
+      case 'P': return "proc2";
+    }
+    console.log("translateCmdToClassName unknown cmd", cmd)
+    return "unknown";
+  },
+  map.loadPrograms = function(x) {
+    const progs = maps[x].programs
+    if (!progs) return [];
+    const result = [[],[],[]];
+    for (let i=0;i<3;i++) {
+      for (const char of progs[i]) {
+        result[i].push(this.translateCmdToClassName(char))
+      }
+    }
+    return result;
+  }
 
   /*map.loadMaps = function() {
     $.getJSON('maps/maps.txt', function(data){

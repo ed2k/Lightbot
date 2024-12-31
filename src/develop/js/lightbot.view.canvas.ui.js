@@ -95,8 +95,22 @@
 
       $('.ui-screen').hide();
 
-      //clear all instructions in main program
-      $('#programContainer li').remove();
+      //clear all instructions in program
+      //$('#programContainer li').remove();
+      console.log("showGameScreen load", level);
+      programs = lightBot.map.loadPrograms(level);
+      if (programs.length == 3) {
+        lightBot.ui.editor.clearPrograms();
+        for (const className of programs[0]) {
+          lightBot.ui.editor.addCommand(className, "procMain");
+        }
+        for (const className of programs[1]) {
+          lightBot.ui.editor.addCommand(className, "procOne");
+        }
+        for (const className of programs[2]) {
+          lightBot.ui.editor.addCommand(className, "procTwo");
+        }
+      }
 
       if (localStorage.getItem('lightbot_program_level_' + level)) {
         lightBot.ui.editor.loadProgram();

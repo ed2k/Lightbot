@@ -8,7 +8,7 @@ var canvasView = function(canvas) {
   // refresh rate and rendering loop
   var fps = 30;
   var fpsDelay = 1000 / fps;
-  var fpsTimer = window.setInterval(update, fpsDelay);
+  var fpsTimer = window.setInterval(update, fpsDelay/2);
 
   // distance between lowest point in the map and the bottom edge
   var offsetY = 50;

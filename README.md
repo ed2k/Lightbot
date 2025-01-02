@@ -9,6 +9,17 @@ The content of the "deploy" folder is everything that you need in order to get s
 /workspaces/Lightbot/src/develop (master) $ python -m http.server 8000
 ```
 
+## More description on case 16 lightbot app level 6-3
+This is a programming puzzle where you need to guide a character to reach all the blue tiles, using a combination of procedures and basic commands like walk, jump, turn left/right, and light.
+Looking at the current solution in the MAIN sequence:
+proc1, proc2, proc2, proc2, turnRight, proc1, proc1, walk, turnRight, proc2
+
+What PROC1 and PROC2 do:
+
+PROC1: proc2, turnRight, turnRight
+PROC2: walk, jump, walk, walk, jump, light, turnRight
+
+
 ## thoughts on finding the lowest number of blocks 
 for case 16, the straight forward (no P1/P2) steps are
 FFFJLJJRJFRFJL RRJFLFJ JLFRJFFL 29 steps, or 
@@ -18,15 +29,17 @@ assume one proc has at least three blocks
 
 notice J can be noop if no height change while F is noop in case of height change (for next move)
 so, safe to add F in front of J and J in front of F, if it helps to create repeat pattern in the straght forwad sequences
-FFFJLJJRJFRFJL JJRJ    JLJLFRJFFL
-JFFFJLJJRJFRFJL JJRJ    JLJLFRJFFFJL
+FFFJLJJRJFRFJ? JJRJ    JLJLFRJFF?
+JFFFJLJJRJFRFJ? JJRJ    JLJLFRJFFFJ?
 p=JFFFJL
-pJJRJFRFJL JJRJ    JLJLFRp
+pJJRJFRFJ? JJRJ    JLJLFRp
 
-FFFJLJJ RJF RFJLR RJF LFJJLF RJF FL
+FFFJLJJ RJF RFJ?R RJF LFJJLF RJF F?
 p=RJF
-FFFJLJJpRFJLRpLFJJLFpFL
+FFFJLJJpRFJLRp?FJJLFpF? =>
+FFFJLJJpRFJLRp?FJJLFpFJ?
+P=FJ FFPLJJpRPLRp?PJLFpP?
 
-pPPPRppFRP => PRRPPPRPRRPRRFRP => FJFFJLR RR FJFFJLR FJFFJLR FJFFJLR R FJFFJLR RR FJFFJLR RRFR FJFFJLR
+pPPPRppFRP => PRRPPPRPRRPRRFRP => FJFFJ?R RR FJFFJ?R FJFFJ?R FJFFJ?R R FJFFJ?R RR FJFFJ?R RRFR FJFFJ?R
 p=PRR
-P=FJFFJLR
+P=FJFFJ?R

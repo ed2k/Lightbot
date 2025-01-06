@@ -43,3 +43,13 @@ P=FJ FFPLJJpRPLRp?PJLFpP?
 pPPPRppFRP => PRRPPPRPRRPRRFRP => FJFFJ?R RR FJFFJ?R FJFFJ?R FJFFJ?R R FJFFJ?R RR FJFFJ?R RRFR FJFFJ?R
 p=PRR
 P=FJFFJ?R
+
+
+PPO https://arxiv.org/pdf/1707.06347
+https://github.com/ericyangyu/PPO-for-Beginners
+https://github.com/tsmatz/reinforcement-learning-tutorials/blob/master/04-ppo.ipynb
+
+berkley deep RL course work
+https://github.com/berkeleydeeprlcourse/homework/tree/master/hw4
+reinforcement learning book
+http://incompleteideas.net/book/RLbook2020.pdf

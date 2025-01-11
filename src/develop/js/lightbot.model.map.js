@@ -342,14 +342,14 @@
       [{"h":1, "t":"b"}, {"h":2, "t":"l"},{"h":2, "t":"b"},{"h":2, "t":"l"}, {"h":1, "t":"b"}],
     ],
     "medals": {
-      "gold": 10,
-      "silver": 13,
+      "gold": 9,
+      "silver": 10,
       "bronze": 16
     },
     "programs": [
-      "F?RF?LF?RFF?",
-      "",
-      ""
+      "p",
+      "PRPJFJp",
+      "F?"
     ]
   },
   ];

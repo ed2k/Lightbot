@@ -107,10 +107,20 @@
     lightBot.ctx.lineTo(p1.x, p1.y);
     lightBot.ctx.fill();
     lightBot.ctx.stroke();
+  
+    // draw horizontal lines for each level
+    for (var level = 0.5; level < this.getHeight(); level += 0.5) {
+      var lineP1 = lightBot.projection.project(this.x * edgeLength, level * edgeLength, this.y * edgeLength);
+      var lineP2 = lightBot.projection.project((this.x+1) * edgeLength, level * edgeLength, this.y * edgeLength);
+      lightBot.ctx.beginPath();
+      lightBot.ctx.moveTo(lineP1.x, lineP1.y);
+      lightBot.ctx.lineTo(lineP2.x, lineP2.y);
+      lightBot.ctx.stroke();
+    }
   }
 
   function drawSideFaceBox() {
-    // left side face: p1 is bottom front and rest is counter-clockwise;
+    // left side face: draw each level from 0 to getHeight()
     lightBot.ctx.fillStyle = colorSide;
     var p1 = lightBot.projection.project(this.x * edgeLength, 0, this.y * edgeLength);
     var p2 = lightBot.projection.project(this.x * edgeLength, this.getHeight() * edgeLength, this.y * edgeLength);
@@ -124,6 +134,16 @@
     lightBot.ctx.lineTo(p1.x, p1.y);
     lightBot.ctx.fill();
     lightBot.ctx.stroke();
+  
+    // draw horizontal lines for each level
+    for (var level = 0.5; level < this.getHeight(); level += 0.5) {
+      var lineP1 = lightBot.projection.project(this.x * edgeLength, level * edgeLength, this.y * edgeLength);
+      var lineP2 = lightBot.projection.project(this.x * edgeLength, level * edgeLength, (this.y+1) * edgeLength);
+      lightBot.ctx.beginPath();
+      lightBot.ctx.moveTo(lineP1.x, lineP1.y);
+      lightBot.ctx.lineTo(lineP2.x, lineP2.y);
+      lightBot.ctx.stroke();
+    }
   }
 
   function stepBox() {}

@@ -2,13 +2,13 @@
 /*jsl:import lightbot.model.game.js*/
 
 (function() {
-  function ElevatorBox(x, y) {
+  function ElevatorBox(height, x, y) {
     // this.lightOn = false;
-    this.height = 0;
+    this.height = height; // assume height range is 1 - 6
     this.x = x;
     this.y = y;
     this.elevate = function() {
-      this.height = (this.height + 2) % 6;
+      this.height = (this.height + 2) % 6 + 1;
     };
     this.reset = function() {
       // this.lightOn = false;

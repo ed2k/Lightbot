@@ -8,6 +8,7 @@
 
   // visual values
   var colorTop = "#c9d3d9"; //#ffa605"; // color of top face
+  var colorTopElevator = "#dc84bfff";
   var colorFront = "#adb8bd"; // "#e28b00"; // color of front face
   var colorSide = "#e5f0f5"; // "#ffc133"; // color of side face
   var strokeColor = "#485256"; // color of the stroke
@@ -28,6 +29,23 @@
   function drawTopFaceBox() {
     // top face: p1 is front left and rest is counter-clockwise
     lightBot.ctx.fillStyle = colorTop;
+    var p1 = lightBot.projection.project(this.x * edgeLength, this.getHeight() * edgeLength, this.y * edgeLength);
+    var p2 = lightBot.projection.project((this.x+1) * edgeLength, this.getHeight() * edgeLength, this.y * edgeLength);
+    var p3 = lightBot.projection.project((this.x+1) * edgeLength, this.getHeight() * edgeLength, (this.y+1) * edgeLength);
+    var p4 = lightBot.projection.project(this.x * edgeLength, this.getHeight() * edgeLength, (this.y+1) * edgeLength);
+    lightBot.ctx.beginPath();
+    lightBot.ctx.moveTo(p1.x, p1.y);
+    lightBot.ctx.lineTo(p2.x, p2.y);
+    lightBot.ctx.lineTo(p3.x, p3.y);
+    lightBot.ctx.lineTo(p4.x, p4.y);
+    lightBot.ctx.lineTo(p1.x, p1.y);
+    lightBot.ctx.fill();
+    lightBot.ctx.stroke();
+  }
+
+  function drawTopFaceElevator() {
+    // top face: p1 is front left and rest is counter-clockwise
+    lightBot.ctx.fillStyle = colorTopElevator;
     var p1 = lightBot.projection.project(this.x * edgeLength, this.getHeight() * edgeLength, this.y * edgeLength);
     var p2 = lightBot.projection.project((this.x+1) * edgeLength, this.getHeight() * edgeLength, this.y * edgeLength);
     var p3 = lightBot.projection.project((this.x+1) * edgeLength, this.getHeight() * edgeLength, (this.y+1) * edgeLength);
@@ -153,4 +171,6 @@
 
   lightBot.LightBox.prototype.step = stepLightBox;
   lightBot.LightBox.prototype.drawTopFace = drawTopFaceLightBox;
+
+  lightBot.ElevatorBox.prototype.drawTopFace = drawTopFaceElevator;
 })();

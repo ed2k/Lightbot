@@ -411,6 +411,27 @@
       "bronze": 15
     }
   },
+  { // level 21 test elevator
+    "direction": 3,
+    "position": {"x": 2, "y": 0},
+    "map": [
+      [{"h":1, "t":"e"}, {"h":2, "t":"l"},{"h":2, "t":"b"},{"h":2, "t":"l"}, {"h":1, "t":"b"}],
+      [{"h":2, "t":"l"}, {"h":2, "t":"l"},{"h":1, "t":"b"},{"h":2, "t":"l"}, {"h":2, "t":"l"}],
+      [{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":2, "t":"b"}],
+      [{"h":2, "t":"l"}, {"h":2, "t":"l"},{"h":1, "t":"b"},{"h":2, "t":"l"}, {"h":2, "t":"l"}],
+      [{"h":1, "t":"b"}, {"h":2, "t":"l"},{"h":2, "t":"b"},{"h":2, "t":"l"}, {"h":1, "t":"b"}],
+    ],
+    "medals": {
+      "gold": 9,
+      "silver": 10,
+      "bronze": 16
+    },
+    "programs": [
+      "p",
+      "PRPJFJp",
+      "F?"
+    ]
+  },
   ];
 
   var levelSize = {'x': 0, 'y': 0}; // the level size
@@ -484,6 +505,9 @@
               mapRef[j][maps[x].map.length - i - 1] = new lightBot.LightBox(maps[x].map[i][j].h, j, maps[x].map.length - i - 1);
               nbrLights++;
               break;
+            case 'e':
+              mapRef[j][maps[x].map.length - i - 1] = new lightBot.ElevatorBox(maps[x].map[i][j].h, j, maps[x].map.length - i - 1);
+              break;              
             default:
               // output error and fall back to box element
               console.error('Map contains unsupported element: ' + maps[x].map[i][j].t);

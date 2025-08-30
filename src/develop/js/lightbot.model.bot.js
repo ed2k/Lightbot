@@ -156,6 +156,8 @@
       var tmp = lightBot.map.getMapRef()[this.currentPos.x][this.currentPos.y];
       if (tmp instanceof lightBot.LightBox) {
         tmp.toggleLight();
+      } else if (tmp instanceof lightBot.ElevatorBox) {
+        tmp.elevate();
       }
     },
     turnLeft: function() {

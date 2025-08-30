@@ -3,15 +3,15 @@
 
 (function() {
   function ElevatorBox(height, x, y) {
-    // this.lightOn = false;
-    this.height = height; // assume height range is 1 - 6
+    this.initialHeight = height;
+    this.height = height; // assume height range is 0 - 5
     this.x = x;
     this.y = y;
     this.elevate = function() {
       this.height = (this.height + 2) % 6;
     };
     this.reset = function() {
-      // this.lightOn = false;
+      this.height = this.initialHeight;
     };
   }
 

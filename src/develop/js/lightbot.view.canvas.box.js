@@ -119,6 +119,24 @@
     }
   }
 
+  function drawFrontElevator() {
+    // front face: p1 is bottom left and rest is counter-clockwise;
+    lightBot.ctx.fillStyle = colorFront;
+    var p1 = lightBot.projection.project(this.x * edgeLength, 0, this.y * edgeLength);
+    var p2 = lightBot.projection.project((this.x+1) * edgeLength, 0, this.y * edgeLength);
+    var p3 = lightBot.projection.project((this.x+1) * edgeLength, this.getHeight() * edgeLength, this.y * edgeLength);
+    var p4 = lightBot.projection.project(this.x * edgeLength, this.getHeight() * edgeLength, this.y * edgeLength);
+    lightBot.ctx.beginPath();
+    lightBot.ctx.moveTo(p1.x, p1.y);
+    lightBot.ctx.lineTo(p2.x, p2.y);
+    lightBot.ctx.lineTo(p3.x, p3.y);
+    lightBot.ctx.lineTo(p4.x, p4.y);
+    lightBot.ctx.lineTo(p1.x, p1.y);
+    lightBot.ctx.fill();
+    lightBot.ctx.stroke();
+  }
+
+
   function drawSideFaceBox() {
     // left side face: draw each level from 0 to getHeight()
     lightBot.ctx.fillStyle = colorSide;
@@ -144,6 +162,23 @@
       lightBot.ctx.lineTo(lineP2.x, lineP2.y);
       lightBot.ctx.stroke();
     }
+  }
+
+  function drawSideElevator() {
+    // left side face: draw each level from 0 to getHeight()
+    lightBot.ctx.fillStyle = colorSide;
+    var p1 = lightBot.projection.project(this.x * edgeLength, 0, this.y * edgeLength);
+    var p2 = lightBot.projection.project(this.x * edgeLength, this.getHeight() * edgeLength, this.y * edgeLength);
+    var p3 = lightBot.projection.project(this.x * edgeLength, this.getHeight() * edgeLength, (this.y+1) * edgeLength);
+    var p4 = lightBot.projection.project(this.x * edgeLength, 0, (this.y+1) * edgeLength);
+    lightBot.ctx.beginPath();
+    lightBot.ctx.moveTo(p1.x, p1.y);
+    lightBot.ctx.lineTo(p2.x, p2.y);
+    lightBot.ctx.lineTo(p3.x, p3.y);
+    lightBot.ctx.lineTo(p4.x, p4.y);
+    lightBot.ctx.lineTo(p1.x, p1.y);
+    lightBot.ctx.fill();
+    lightBot.ctx.stroke();
   }
 
   function stepBox() {}
@@ -192,6 +227,7 @@
   lightBot.LightBox.prototype.step = stepLightBox;
   lightBot.LightBox.prototype.drawTopFace = drawTopFaceLightBox;
 
-  lightBot.ElevatorBox.prototype.step = stepBox;
   lightBot.ElevatorBox.prototype.drawTopFace = drawTopFaceElevator;
+  lightBot.ElevatorBox.prototype.drawFrontFace = drawFrontElevator;
+  lightBot.ElevatorBox.prototype.drawSideFace = drawSideElevator;
 })();

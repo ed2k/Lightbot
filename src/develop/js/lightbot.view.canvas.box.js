@@ -172,5 +172,6 @@
   lightBot.LightBox.prototype.step = stepLightBox;
   lightBot.LightBox.prototype.drawTopFace = drawTopFaceLightBox;
 
+  lightBot.ElevatorBox.prototype.step = stepBox;
   lightBot.ElevatorBox.prototype.drawTopFace = drawTopFaceElevator;
 })();

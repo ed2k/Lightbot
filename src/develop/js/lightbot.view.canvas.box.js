@@ -120,12 +120,15 @@
   }
 
   function drawFrontElevator() {
-    // front face: p1 is bottom left and rest is counter-clockwise;
+     // front face: draw as a thin rectangle in the center of the tile
     lightBot.ctx.fillStyle = colorFront;
-    var p1 = lightBot.projection.project(this.x * edgeLength, 0, this.y * edgeLength);
-    var p2 = lightBot.projection.project((this.x+1) * edgeLength, 0, this.y * edgeLength);
-    var p3 = lightBot.projection.project((this.x+1) * edgeLength, this.getHeight() * edgeLength, this.y * edgeLength);
-    var p4 = lightBot.projection.project(this.x * edgeLength, this.getHeight() * edgeLength, this.y * edgeLength);
+    var stickWidth = edgeLength * 0.1; // thin stick width
+    var centerX = (this.x + 0.5) * edgeLength;
+    var centerY = (this.y + 0.5) * edgeLength;
+    var p1 = lightBot.projection.project(centerX - stickWidth/2, 0, centerY);
+    var p2 = lightBot.projection.project(centerX + stickWidth/2, 0, centerY);
+    var p3 = lightBot.projection.project(centerX + stickWidth/2, this.getHeight() * edgeLength, centerY);
+    var p4 = lightBot.projection.project(centerX - stickWidth/2, this.getHeight() * edgeLength, centerY);
     lightBot.ctx.beginPath();
     lightBot.ctx.moveTo(p1.x, p1.y);
     lightBot.ctx.lineTo(p2.x, p2.y);
@@ -165,12 +168,15 @@
   }
 
   function drawSideElevator() {
-    // left side face: draw each level from 0 to getHeight()
+    // left side face: draw as a thin rectangle in the center
     lightBot.ctx.fillStyle = colorSide;
-    var p1 = lightBot.projection.project(this.x * edgeLength, 0, this.y * edgeLength);
-    var p2 = lightBot.projection.project(this.x * edgeLength, this.getHeight() * edgeLength, this.y * edgeLength);
-    var p3 = lightBot.projection.project(this.x * edgeLength, this.getHeight() * edgeLength, (this.y+1) * edgeLength);
-    var p4 = lightBot.projection.project(this.x * edgeLength, 0, (this.y+1) * edgeLength);
+    var stickWidth = edgeLength * 0.1; // thin stick width
+    var centerX = (this.x + 0.5) * edgeLength;
+    var centerY = (this.y + 0.5) * edgeLength;
+    var p1 = lightBot.projection.project(centerX, 0, centerY - stickWidth/2);
+    var p2 = lightBot.projection.project(centerX, this.getHeight() * edgeLength, centerY - stickWidth/2);
+    var p3 = lightBot.projection.project(centerX, this.getHeight() * edgeLength, centerY + stickWidth/2);
+    var p4 = lightBot.projection.project(centerX, 0, centerY + stickWidth/2);
     lightBot.ctx.beginPath();
     lightBot.ctx.moveTo(p1.x, p1.y);
     lightBot.ctx.lineTo(p2.x, p2.y);
@@ -202,9 +208,9 @@
   function draw() {
     lightBot.ctx.strokeStyle = strokeColor;
     lightBot.ctx.lineWidth = strokeWidth;
-    this.drawTopFace();
     this.drawFrontFace();
     this.drawSideFace();
+    this.drawTopFace(); // most visible for elevator last draw
   }
 
   // add getHeight method and only use getHeight in view

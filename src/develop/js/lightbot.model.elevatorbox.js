@@ -8,7 +8,7 @@
     this.x = x;
     this.y = y;
     this.elevate = function() {
-      this.height = (this.height + 2) % 6 + 1;
+      this.height = (this.height + 2) % 6;
     };
     this.reset = function() {
       // this.lightOn = false;

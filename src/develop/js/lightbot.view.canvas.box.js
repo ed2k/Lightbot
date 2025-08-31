@@ -58,6 +58,20 @@
     lightBot.ctx.lineTo(p1.x, p1.y);
     lightBot.ctx.fill();
     lightBot.ctx.stroke();
+  
+    // var baseHeight = (this.getHeight() % 2) * 0.25;
+    // var p1 = lightBot.projection.project(this.x * edgeLength, baseHeight * edgeLength, this.y * edgeLength);
+    // var p2 = lightBot.projection.project((this.x+1) * edgeLength, baseHeight * edgeLength, this.y * edgeLength);
+    // var p3 = lightBot.projection.project((this.x+1) * edgeLength, baseHeight * edgeLength, (this.y+1) * edgeLength);
+    // var p4 = lightBot.projection.project(this.x * edgeLength, baseHeight * edgeLength, (this.y+1) * edgeLength);
+    // lightBot.ctx.beginPath();
+    // lightBot.ctx.moveTo(p1.x, p1.y);
+    // lightBot.ctx.lineTo(p2.x, p2.y);
+    // lightBot.ctx.lineTo(p3.x, p3.y);
+    // lightBot.ctx.lineTo(p4.x, p4.y);
+    // lightBot.ctx.lineTo(p1.x, p1.y);
+    // lightBot.ctx.fill();
+    // lightBot.ctx.stroke();
   }
 
   function drawTopFaceLightBox() {
@@ -120,7 +134,8 @@
   }
 
   function drawFrontElevator() {
-     // front face: draw as a thin rectangle in the center of the tile
+    // var baseHeight = (this.getHeight() % 2) * 0.25;
+    // front face: draw as a thin rectangle in the center of the tile
     lightBot.ctx.fillStyle = colorFront;
     var stickWidth = edgeLength * 0.1; // thin stick width
     var centerX = (this.x + 0.5) * edgeLength;
@@ -137,6 +152,35 @@
     lightBot.ctx.lineTo(p1.x, p1.y);
     lightBot.ctx.fill();
     lightBot.ctx.stroke();
+  
+    // // base side
+    // var p1 = lightBot.projection.project(this.x * edgeLength, 0, this.y * edgeLength);
+    // var p2 = lightBot.projection.project((this.x+1) * edgeLength, 0, this.y * edgeLength);
+    // var p3 = lightBot.projection.project((this.x+1) * edgeLength, baseHeight * edgeLength, this.y * edgeLength);
+    // var p4 = lightBot.projection.project(this.x * edgeLength, baseHeight * edgeLength, this.y * edgeLength);
+    // lightBot.ctx.beginPath();
+    // lightBot.ctx.moveTo(p1.x, p1.y);
+    // lightBot.ctx.lineTo(p2.x, p2.y);
+    // lightBot.ctx.lineTo(p3.x, p3.y);
+    // lightBot.ctx.lineTo(p4.x, p4.y);
+    // lightBot.ctx.lineTo(p1.x, p1.y);
+    // lightBot.ctx.fill();
+    // lightBot.ctx.stroke();
+  
+    // // upper side
+    // var upperHeight = this.getHeight() - 0.25;
+    // var p1 = lightBot.projection.project(this.x * edgeLength, upperHeight * edgeLength, this.y * edgeLength);
+    // var p2 = lightBot.projection.project((this.x+1) * edgeLength, upperHeight * edgeLength, this.y * edgeLength);
+    // var p3 = lightBot.projection.project((this.x+1) * edgeLength, this.getHeight() * edgeLength, this.y * edgeLength);
+    // var p4 = lightBot.projection.project(this.x * edgeLength, this.getHeight() * edgeLength, this.y * edgeLength);
+    // lightBot.ctx.beginPath();
+    // lightBot.ctx.moveTo(p1.x, p1.y);
+    // lightBot.ctx.lineTo(p2.x, p2.y);
+    // lightBot.ctx.lineTo(p3.x, p3.y);
+    // lightBot.ctx.lineTo(p4.x, p4.y);
+    // lightBot.ctx.lineTo(p1.x, p1.y);
+    // lightBot.ctx.fill();
+    // lightBot.ctx.stroke();
   }
 
 
@@ -168,6 +212,7 @@
   }
 
   function drawSideElevator() {
+    // var baseHeight = (this.getHeight() % 2) * 0.25;
     // left side face: draw as a thin rectangle in the center
     lightBot.ctx.fillStyle = colorSide;
     var stickWidth = edgeLength * 0.1; // thin stick width
@@ -185,6 +230,34 @@
     lightBot.ctx.lineTo(p1.x, p1.y);
     lightBot.ctx.fill();
     lightBot.ctx.stroke();
+
+    // // draw upper
+    // var p1 = lightBot.projection.project(this.x * edgeLength, this.getHeight() * edgeLength, this.y * edgeLength);
+    // var p2 = lightBot.projection.project(this.x * edgeLength, (this.getHeight()-0.25) * edgeLength, (this.y+1) * edgeLength);
+    // var p3 = lightBot.projection.project(this.x * edgeLength, (this.getHeight()-0.25) * edgeLength, (this.y+1) * edgeLength);
+    // var p4 = lightBot.projection.project(this.x * edgeLength, this.getHeight() * edgeLength, this.y * edgeLength);
+    // lightBot.ctx.beginPath();
+    // lightBot.ctx.moveTo(p1.x, p1.y);
+    // lightBot.ctx.lineTo(p2.x, p2.y);
+    // lightBot.ctx.lineTo(p3.x, p3.y);
+    // lightBot.ctx.lineTo(p4.x, p4.y);
+    // lightBot.ctx.lineTo(p1.x, p1.y);
+    // lightBot.ctx.fill();
+    // lightBot.ctx.stroke();
+
+    // // draw base
+    // var p1 = lightBot.projection.project(this.x * edgeLength, 0, this.y * edgeLength);
+    // var p2 = lightBot.projection.project(this.x * edgeLength, baseHeight * edgeLength, this.y * edgeLength);
+    // var p3 = lightBot.projection.project(this.x * edgeLength, baseHeight * edgeLength, (this.y+1) * edgeLength);
+    // var p4 = lightBot.projection.project(this.x * edgeLength, 0, (this.y+1) * edgeLength);
+    // lightBot.ctx.beginPath();
+    // lightBot.ctx.moveTo(p1.x, p1.y);
+    // lightBot.ctx.lineTo(p2.x, p2.y);
+    // lightBot.ctx.lineTo(p3.x, p3.y);
+    // lightBot.ctx.lineTo(p4.x, p4.y);
+    // lightBot.ctx.lineTo(p1.x, p1.y);
+    // lightBot.ctx.fill();
+    // lightBot.ctx.stroke();
   }
 
   function stepBox() {}

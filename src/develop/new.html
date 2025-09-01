@@ -102,6 +102,7 @@
         let levelData; // Store level data globally to persist changes
         let currentInstructions = []; // Store current instruction sequence
         let executionQueue = []; // Queue for instruction execution
+        let currentAnimation = 'stand'; // Current bot animation state
         
         // Bot state
         let bot = {
@@ -134,6 +135,15 @@
             light: { name: 'light', display: 'Light' },
             turnLeft: { name: 'turnLeft', display: 'Turn Left' },
             turnRight: { name: 'turnRight', display: 'Turn Right' }
+        };
+        
+        // Bot animations - sprite sheet coordinates
+        const botAnimations = {
+            stand: { sX: 0, frames: 1 },
+            walk: { sX: 80, frames: 3 },
+            light: { sX: 480, frames: 2 },
+            jumpUp: { sX: 320, frames: 1 },
+            jumpDown: { sX: 400, frames: 1 }
         };
         
         // Get level data - hardcoded level 19
@@ -246,6 +256,16 @@
             box.castShadow = true;
             box.receiveShadow = true;
             
+            // Add wireframe edges for better visibility
+            const edges = new THREE.EdgesGeometry(geometry);
+            const edgeMaterial = new THREE.LineBasicMaterial({ 
+                color: colors.stroke,
+                linewidth: 2
+            });
+            const wireframe = new THREE.LineSegments(edges, edgeMaterial);
+            wireframe.position.y = boxHeight / 2;
+            group.add(wireframe);
+            
             // Add edge lines for level separation
             if (height > 1) {
                 for (let level = 1; level < height; level++) {
@@ -281,6 +301,13 @@
             base.receiveShadow = true;
             group.add(base);
             
+            // Add wireframe edges to base
+            const baseEdges = new THREE.EdgesGeometry(baseGeometry);
+            const baseEdgeMaterial = new THREE.LineBasicMaterial({ color: colors.stroke, linewidth: 2 });
+            const baseWireframe = new THREE.LineSegments(baseEdges, baseEdgeMaterial);
+            baseWireframe.position.y = 0.125;
+            group.add(baseWireframe);
+            
             // Vertical stick
             const stickGeometry = new THREE.BoxGeometry(stickWidth, boxHeight - 0.5, stickWidth);
             const stickMaterial = new THREE.MeshLambertMaterial({ color: colors.elevator });
@@ -288,6 +315,13 @@
             stick.position.y = boxHeight / 2;
             stick.castShadow = true;
             group.add(stick);
+            
+            // Add wireframe edges to stick
+            const stickEdges = new THREE.EdgesGeometry(stickGeometry);
+            const stickEdgeMaterial = new THREE.LineBasicMaterial({ color: colors.stroke, linewidth: 2 });
+            const stickWireframe = new THREE.LineSegments(stickEdges, stickEdgeMaterial);
+            stickWireframe.position.y = boxHeight / 2;
+            group.add(stickWireframe);
             
             // Top platform
             const topGeometry = new THREE.BoxGeometry(1, 0.25, 1);
@@ -297,6 +331,13 @@
             top.castShadow = true;
             top.receiveShadow = true;
             group.add(top);
+            
+            // Add wireframe edges to top
+            const topEdges = new THREE.EdgesGeometry(topGeometry);
+            const topEdgeMaterial = new THREE.LineBasicMaterial({ color: colors.stroke, linewidth: 2 });
+            const topWireframe = new THREE.LineSegments(topEdges, topEdgeMaterial);
+            topWireframe.position.y = boxHeight - 0.125;
+            group.add(topWireframe);
         }
         
         function loadLevel() {
@@ -432,17 +473,35 @@
             
             botMesh.position.set(mapX, newY, mapY);
             
-            // Update sprite based on direction if using sprite
-            if (botMesh.material && botMesh.material.map) {
-                const spriteOffsets = [
-                    [0, 3/4],     // SE - top row, first sprite
-                    [1/8, 3/4],   // NE - top row, second sprite  
-                    [2/8, 3/4],   // NW - top row, third sprite
-                    [3/8, 3/4]    // SW - top row, fourth sprite
-                ];
-                const offset = spriteOffsets[bot.direction];
-                botMesh.material.map.offset.set(offset[0], offset[1]);
-            }
+            // Update sprite based on direction and animation
+            updateBotSprite();
+        }
+        
+        function updateBotSprite() {
+            if (!botMesh || !botMesh.material || !botMesh.material.map) return;
+            
+            // Get animation data
+            const anim = botAnimations[currentAnimation];
+            if (!anim) return;
+            
+            // Calculate sprite position in sheet
+            // Sprite sheet is 8 columns x 4 rows
+            // Each sprite is 80x100 pixels, sheet is 640x400
+            const spriteWidth = 80;
+            const sheetWidth = 640;
+            
+            // Direction offsets (4 rows for 4 directions)
+            const directionRow = bot.direction; // 0=SE, 1=NE, 2=NW, 3=SW
+            
+            // Animation frame offset
+            const frameOffset = Math.floor(Date.now() / 200) % anim.frames; // Animate frames
+            
+            // Calculate UV coordinates
+            const u = (anim.sX + frameOffset * spriteWidth) / sheetWidth;
+            const v = (3 - directionRow) / 4; // Flip Y coordinate for Three.js
+            
+            botMesh.material.map.offset.set(u, v);
+            console.log(`Bot sprite: animation=${currentAnimation}, direction=${bot.direction}, frame=${frameOffset}, UV=(${u}, ${v})`);
         }
         
         function addInstruction(instructionType) {
@@ -512,6 +571,10 @@
         }
         
         function botWalk() {
+            // Set walk animation
+            currentAnimation = 'walk';
+            updateBotSprite();
+            
             const levelData = getLevelData();
             const directions = [
                 { x: 0, y: -1 }, // SE
@@ -535,6 +598,12 @@
                     bot.position.y = newY;
                 }
             }
+            
+            // Return to stand animation after a delay
+            setTimeout(() => {
+                currentAnimation = 'stand';
+                updateBotSprite();
+            }, 500);
         }
         
         function botJump() {
@@ -556,15 +625,33 @@
                 const currentHeight = levelData.map[bot.position.x][bot.position.y].h;
                 const targetHeight = levelData.map[newX][newY].h;
                 
+                // Set appropriate jump animation
+                if (targetHeight > currentHeight) {
+                    currentAnimation = 'jumpUp';
+                } else {
+                    currentAnimation = 'jumpDown';
+                }
+                updateBotSprite();
+                
                 // Can jump up 1 level or down any amount
                 if (targetHeight - currentHeight === 1 || currentHeight > targetHeight) {
                     bot.position.x = newX;
                     bot.position.y = newY;
                 }
             }
+            
+            // Return to stand animation after jump
+            setTimeout(() => {
+                currentAnimation = 'stand';
+                updateBotSprite();
+            }, 500);
         }
         
         function botLight() {
+            // Set light animation
+            currentAnimation = 'light';
+            updateBotSprite();
+            
             const levelData = getLevelData();
             const currentTile = levelData.map[bot.position.x][bot.position.y];
             if (currentTile.t === 'l') {
@@ -619,14 +706,24 @@
                     console.log('No elevator box found at position:', bot.position);
                 }
             }
+            
+            // Return to stand animation after light action
+            setTimeout(() => {
+                currentAnimation = 'stand';
+                updateBotSprite();
+            }, 500);
         }
         
         function botTurnLeft() {
             bot.direction = (bot.direction + 1) % 4;
+            // Update sprite to show new direction immediately
+            updateBotSprite();
         }
         
         function botTurnRight() {
             bot.direction = (bot.direction - 1 + 4) % 4;
+            // Update sprite to show new direction immediately
+            updateBotSprite();
         }
         
         

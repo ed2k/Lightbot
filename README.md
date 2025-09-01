@@ -20,6 +20,20 @@ PROC1: proc2, turnRight, turnRight
 PROC2: walk, jump, walk, walk, jump, light, turnRight
 
 
+## Three.js 3D Implementation
+A modern 3D version of LightBot has been created using Three.js in `src/develop/new.html`. This implementation features:
+- **True 3D rendering** with WebGL and realistic lighting/shadows
+- **Interactive camera controls** (orbit, zoom, pan)
+- **Fully playable game** with bot movement and instruction execution
+- **Visual improvements**: Level separation lines, elevator stick design, animated light boxes
+- **Modern UI**: Click buttons to add instructions, then run to execute
+
+To play the 3D version:
+1. Navigate to `src/develop/` and start a local server
+2. Open `new.html` in your browser
+3. Use the control buttons to program the bot
+4. Click "Run" to execute your instructions
+
 ## thoughts on finding the lowest number of blocks 
 for case 16, the straight forward (no P1/P2) steps are
 FFFJLJJRJFRFJL RRJFLFJ JLFRJFFL 29 steps, or 

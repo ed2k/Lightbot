@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LightBot 3D - Three.js Version</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a1a;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+        
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #gameCanvas {
+            display: block;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            color: white;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 100;
+        }
+        
+        button {
+            margin: 5px;
+            padding: 10px 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        #info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="ui">
+            <h2>LightBot 3D - Level 20</h2>
+        </div>
+        
+        <div id="controls">
+            <button onclick="resetCamera()">Reset Camera</button>
+            <button onclick="toggleWireframe()">Toggle Wireframe</button>
+            <button onclick="loadLevel()">Reload Level</button>
+            <button onclick="addInstruction('walk')">Walk</button>
+            <button onclick="addInstruction('jump')">Jump</button>
+            <button onclick="addInstruction('light')">Light</button>
+            <button onclick="addInstruction('turnLeft')">Turn Left</button>
+            <button onclick="addInstruction('turnRight')">Turn Right</button>
+            <button onclick="executeInstructions()">Run</button>
+            <button onclick="clearInstructions()">Clear</button>
+        </div>
+        
+        <div id="info">
+            <p>Mouse: Rotate | Wheel: Zoom | Right-click: Pan</p>
+        </div>
+    </div>
+
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+
+    <script>
+        // Game state
+        let scene, camera, renderer, controls;
+        let boxes = [];
+        let botMesh;
+        let isExecuting = false;
+        let instructionQueue = [];
+        let currentLevel = 19; // Use level 19 (displayed as Level 20)
+        let levelData; // Store level data globally to persist changes
+        let currentInstructions = []; // Store current instruction sequence
+        let executionQueue = []; // Queue for instruction execution
+        
+        // Bot state
+        let bot = {
+            position: { x: 0, y: 0 },
+            direction: 0, // 0=SE, 1=NE, 2=NW, 3=SW
+            startPosition: { x: 0, y: 0 },
+            startDirection: 0
+        };
+        
+        // Colors matching original game
+        const colors = {
+            box: {
+                top: 0xc9d3d9,
+                front: 0xadb8bd,
+                side: 0xe5f0f5
+            },
+            lightBox: {
+                on: 0xFFE545,
+                off: 0x0468fb
+            },
+            elevator: 0xdc84bf,
+            stroke: 0x485256,
+            bot: 0xff6b35
+        };
+        
+        // Instructions
+        const instructions = {
+            walk: { name: 'walk', display: 'Walk Forward' },
+            jump: { name: 'jump', display: 'Jump' },
+            light: { name: 'light', display: 'Light' },
+            turnLeft: { name: 'turnLeft', display: 'Turn Left' },
+            turnRight: { name: 'turnRight', display: 'Turn Right' }
+        };
+        
+        // Get level data - hardcoded level 19
+        function getLevelData() {
+            // Initialize level data once and store globally
+            if (!levelData) {
+                levelData = {
+                    "start": {"x": 2, "y": 0, "d": 2},
+                    "map": [
+                        [{"h": 1, "t": "n"}, {"h": 1, "t": "n"}, {"h": 1, "t": "n"}],
+                        [{"h": 1, "t": "n"}, {"h": 1, "t": "n"}, {"h": 1, "t": "n"}],
+                        [{"h": 1, "t": "n"}, {"h": 1, "t": "e"}, {"h": 1, "t": "l"}],
+                        [{"h": 1, "t": "n"}, {"h": 1, "t": "n"}, {"h": 1, "t": "n"}],
+                        [{"h": 1, "t": "n"}, {"h": 1, "t": "n"}, {"h": 1, "t": "n"}]
+                    ]
+                };
+            }
+            return levelData;
+        }
+
+        function init() {
+            // Create scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x2c3e50);
+            
+            // Create camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(10, 8, 10);
+            
+            // Create renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('container').appendChild(renderer.domElement);
+            
+            // Add controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            
+            // Add lighting
+            setupLighting();
+            
+            
+            // Load level
+            loadLevel();
+            
+            // Create bot
+            createBot();
+            
+            // Start animation loop
+            animate();
+            
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize);
+        }
+        
+        function setupLighting() {
+            // Ambient light
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            scene.add(ambientLight);
+            
+            // Directional light
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 10, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            scene.add(directionalLight);
+        }
+        
+        function createBox(x, y, height, type) {
+            const boxGroup = new THREE.Group();
+            
+            if (type === 'e') {
+                // Elevator box - thin stick with base and top
+                createElevatorBox(boxGroup, height);
+            } else {
+                // Regular box or light box
+                createRegularBox(boxGroup, height, type);
+            }
+            
+            boxGroup.position.set(x, 0, y);
+            return boxGroup;
+        }
+        
+        function createRegularBox(group, height, type) {
+            const boxHeight = height * 0.5; // Apply height scale
+            
+            // Create main box geometry
+            const geometry = new THREE.BoxGeometry(1, boxHeight, 1);
+            
+            // Choose material based on type
+            let material;
+            if (type === 'l') {
+                // Light box - animated material
+                material = new THREE.MeshLambertMaterial({ 
+                    color: colors.lightBox.off,
+                    transparent: true,
+                    opacity: 0.9
+                });
+            } else {
+                // Regular box
+                material = new THREE.MeshLambertMaterial({ color: colors.box.top });
+            }
+            
+            const box = new THREE.Mesh(geometry, material);
+            box.position.y = boxHeight / 2;
+            box.castShadow = true;
+            box.receiveShadow = true;
+            
+            // Add edge lines for level separation
+            if (height > 1) {
+                for (let level = 1; level < height; level++) {
+                    const lineGeometry = new THREE.BufferGeometry();
+                    const points = [
+                        new THREE.Vector3(-0.5, level * 0.5, -0.5),
+                        new THREE.Vector3(0.5, level * 0.5, -0.5),
+                        new THREE.Vector3(0.5, level * 0.5, 0.5),
+                        new THREE.Vector3(-0.5, level * 0.5, 0.5),
+                        new THREE.Vector3(-0.5, level * 0.5, -0.5)
+                    ];
+                    lineGeometry.setFromPoints(points);
+                    
+                    const lineMaterial = new THREE.LineBasicMaterial({ color: colors.stroke });
+                    const line = new THREE.Line(lineGeometry, lineMaterial);
+                    group.add(line);
+                }
+            }
+            
+            group.add(box);
+        }
+        
+        function createElevatorBox(group, height) {
+            const boxHeight = height * 0.5; // Apply height scale
+            const stickWidth = 0.1;
+            
+            // Base platform
+            const baseGeometry = new THREE.BoxGeometry(1, 0.25, 1);
+            const baseMaterial = new THREE.MeshLambertMaterial({ color: colors.elevator });
+            const base = new THREE.Mesh(baseGeometry, baseMaterial);
+            base.position.y = 0.125;
+            base.castShadow = true;
+            base.receiveShadow = true;
+            group.add(base);
+            
+            // Vertical stick
+            const stickGeometry = new THREE.BoxGeometry(stickWidth, boxHeight - 0.5, stickWidth);
+            const stickMaterial = new THREE.MeshLambertMaterial({ color: colors.elevator });
+            const stick = new THREE.Mesh(stickGeometry, stickMaterial);
+            stick.position.y = boxHeight / 2;
+            stick.castShadow = true;
+            group.add(stick);
+            
+            // Top platform
+            const topGeometry = new THREE.BoxGeometry(1, 0.25, 1);
+            const topMaterial = new THREE.MeshLambertMaterial({ color: colors.elevator });
+            const top = new THREE.Mesh(topGeometry, topMaterial);
+            top.position.y = boxHeight - 0.125;
+            top.castShadow = true;
+            top.receiveShadow = true;
+            group.add(top);
+        }
+        
+        function loadLevel() {
+            // Reset level data to original state
+            levelData = null;
+            
+            // Clear existing boxes
+            boxes.forEach(box => scene.remove(box));
+            boxes = [];
+            
+            const freshLevelData = getLevelData();
+            
+            // Set bot starting position and direction
+            bot.position.x = freshLevelData.start.x;
+            bot.position.y = freshLevelData.start.y;
+            bot.direction = freshLevelData.start.d;
+            bot.startPosition = { ...bot.position };
+            bot.startDirection = bot.direction;
+            
+            // Create boxes for the level
+            for (let x = 0; x < freshLevelData.map.length; x++) {
+                for (let y = 0; y < freshLevelData.map[x].length; y++) {
+                    const tile = freshLevelData.map[x][y];
+                    const mapX = x - freshLevelData.map.length/2;
+                    const mapY = y - freshLevelData.map[0].length/2;
+                    const box = createBox(mapX, mapY, tile.h, tile.t);
+                    scene.add(box);
+                    boxes.push(box);
+                }
+            }
+            
+            // Update bot position
+            if (botMesh) {
+                updateBotPosition();
+            }
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Update controls
+            controls.update();
+            
+            // Animate light boxes (pulsing effect)
+            boxes.forEach(box => {
+                box.children.forEach(child => {
+                    if (child.material && child.material.color.getHex() === colors.lightBox.off) {
+                        // Simple pulsing animation for light boxes
+                        const time = Date.now() * 0.001;
+                        child.material.opacity = 0.7 + 0.3 * Math.sin(time * 2);
+                    }
+                });
+            });
+            
+            renderer.render(scene, camera);
+        }
+        
+        function resetCamera() {
+            camera.position.set(10, 8, 10);
+            controls.reset();
+        }
+        
+        function toggleWireframe() {
+            wireframeMode = !wireframeMode;
+            boxes.forEach(box => {
+                box.children.forEach(child => {
+                    if (child.material) {
+                        child.material.wireframe = wireframeMode;
+                    }
+                });
+            });
+        }
+        
+        function createBot() {
+            console.log('Creating bot...');
+            
+            // Create bot using sprite texture
+            const textureLoader = new THREE.TextureLoader();
+            textureLoader.load('img/sprites.png', (texture) => {
+                console.log('Bot sprite loaded successfully');
+                // Create sprite material with bot texture
+                const spriteMaterial = new THREE.SpriteMaterial({ 
+                    map: texture,
+                    transparent: true
+                });
+                
+                // Set texture offset to show first bot sprite (top-left)
+                texture.repeat.set(1/8, 1/4); // 8 columns, 4 rows in sprite sheet
+                texture.offset.set(0, 3/4); // Start from top-left sprite
+                
+                botMesh = new THREE.Sprite(spriteMaterial);
+                botMesh.scale.set(1, 1, 1);
+                
+                // Position bot at starting position
+                updateBotPosition();
+                scene.add(botMesh);
+                console.log('Bot sprite added to scene');
+            }, undefined, (error) => {
+                console.error('Error loading bot sprite:', error);
+                console.log('Using fallback cube bot');
+                // Fallback to cube if sprite fails to load
+                const botGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+                const botMaterial = new THREE.MeshLambertMaterial({ 
+                    color: colors.bot,
+                    emissive: 0x331100
+                });
+                botMesh = new THREE.Mesh(botGeometry, botMaterial);
+                botMesh.castShadow = true;
+                updateBotPosition();
+                scene.add(botMesh);
+                console.log('Bot cube added to scene');
+            });
+        }
+        
+        function updateBotPosition() {
+            if (!botMesh) {
+                console.log('No botMesh found in updateBotPosition');
+                return;
+            }
+            
+            // Get current level data
+            const levelData = getLevelData();
+            
+            // Fix coordinate mapping - don't center the map
+            const mapX = bot.position.x - levelData.map.length/2;
+            const mapY = bot.position.y - levelData.map[0].length/2;
+            const currentTile = levelData.map[bot.position.x][bot.position.y];
+            const height = currentTile.h * 0.5; // Apply height scale
+            const newY = height + 0.5;
+            
+            console.log('updateBotPosition - Bot pos:', bot.position, 'Tile height:', currentTile.h, 'Calculated Y:', newY);
+            console.log('updateBotPosition - Before:', botMesh.position.y, 'After:', newY);
+            
+            botMesh.position.set(mapX, newY, mapY);
+            
+            // Update sprite based on direction if using sprite
+            if (botMesh.material && botMesh.material.map) {
+                const spriteOffsets = [
+                    [0, 3/4],     // SE - top row, first sprite
+                    [1/8, 3/4],   // NE - top row, second sprite  
+                    [2/8, 3/4],   // NW - top row, third sprite
+                    [3/8, 3/4]    // SW - top row, fourth sprite
+                ];
+                const offset = spriteOffsets[bot.direction];
+                botMesh.material.map.offset.set(offset[0], offset[1]);
+            }
+        }
+        
+        function addInstruction(instructionType) {
+            if (!isExecuting) {
+                currentInstructions.push(instructionType);
+                updateInstructionDisplay();
+            }
+        }
+        
+        function clearInstructions() {
+            if (!isExecuting) {
+                currentInstructions = [];
+                updateInstructionDisplay();
+            }
+        }
+        
+        function updateInstructionDisplay() {
+            const ui = document.getElementById('ui');
+            const existing = document.getElementById('instructionList');
+            if (existing) existing.remove();
+            
+            const instructionDiv = document.createElement('div');
+            instructionDiv.id = 'instructionList';
+            instructionDiv.innerHTML = '<h3>Instructions:</h3><p>' + 
+                currentInstructions.map(i => instructions[i].display).join(' → ') + '</p>';
+            ui.appendChild(instructionDiv);
+        }
+        
+        function executeInstructions() {
+            if (isExecuting || currentInstructions.length === 0) return;
+            
+            isExecuting = true;
+            executionQueue = [...currentInstructions];
+            executeNextInstruction();
+        }
+        
+        function executeNextInstruction() {
+            if (executionQueue.length === 0) {
+                isExecuting = false;
+                return;
+            }
+            
+            const instruction = executionQueue.shift();
+            
+            switch (instruction) {
+                case 'walk':
+                    botWalk();
+                    break;
+                case 'jump':
+                    botJump();
+                    break;
+                case 'light':
+                    botLight();
+                    break;
+                case 'turnLeft':
+                    botTurnLeft();
+                    break;
+                case 'turnRight':
+                    botTurnRight();
+                    break;
+            }
+            
+            updateBotPosition();
+            
+            // Continue execution after delay
+            setTimeout(() => executeNextInstruction(), 500);
+        }
+        
+        function botWalk() {
+            const levelData = getLevelData();
+            const directions = [
+                { x: 0, y: -1 }, // SE
+                { x: 1, y: 0 },  // NE
+                { x: 0, y: 1 },  // NW
+                { x: -1, y: 0 }  // SW
+            ];
+            
+            const dir = directions[bot.direction];
+            const newX = bot.position.x + dir.x;
+            const newY = bot.position.y + dir.y;
+            
+            // Check bounds and height
+            if (newX >= 0 && newX < levelData.map.length && 
+                newY >= 0 && newY < levelData.map[0].length) {
+                const currentHeight = levelData.map[bot.position.x][bot.position.y].h;
+                const targetHeight = levelData.map[newX][newY].h;
+                
+                if (currentHeight === targetHeight) {
+                    bot.position.x = newX;
+                    bot.position.y = newY;
+                }
+            }
+        }
+        
+        function botJump() {
+            const levelData = getLevelData();
+            const directions = [
+                { x: 0, y: -1 }, // SE
+                { x: 1, y: 0 },  // NE
+                { x: 0, y: 1 },  // NW
+                { x: -1, y: 0 }  // SW
+            ];
+            
+            const dir = directions[bot.direction];
+            const newX = bot.position.x + dir.x;
+            const newY = bot.position.y + dir.y;
+            
+            // Check bounds
+            if (newX >= 0 && newX < levelData.map.length && 
+                newY >= 0 && newY < levelData.map[0].length) {
+                const currentHeight = levelData.map[bot.position.x][bot.position.y].h;
+                const targetHeight = levelData.map[newX][newY].h;
+                
+                // Can jump up 1 level or down any amount
+                if (targetHeight - currentHeight === 1 || currentHeight > targetHeight) {
+                    bot.position.x = newX;
+                    bot.position.y = newY;
+                }
+            }
+        }
+        
+        function botLight() {
+            const levelData = getLevelData();
+            const currentTile = levelData.map[bot.position.x][bot.position.y];
+            if (currentTile.t === 'l') {
+                // Toggle light box
+                const boxIndex = bot.position.x * levelData.map[0].length + bot.position.y;
+                const box = boxes[boxIndex];
+                if (box) {
+                    box.children.forEach(child => {
+                        if (child.material && child.material.color) {
+                            const isOn = child.material.color.getHex() === colors.lightBox.on;
+                            child.material.color.setHex(isOn ? colors.lightBox.off : colors.lightBox.on);
+                        }
+                    });
+                }
+            } else if (currentTile.t === 'e') {
+                // Elevator logic - increase height by 2 mod 6
+                const boxIndex = bot.position.x * levelData.map[0].length + bot.position.y;
+                const box = boxes[boxIndex];
+                console.log('Elevator activation - Bot at:', bot.position, 'Box index:', boxIndex, 'Box found:', !!box);
+                
+                if (box) {
+                    // Get current elevator height from the level data
+                    const currentHeight = currentTile.h;
+                    // Calculate new height: increase by 2, mod 6 (cycle through 1,3,5,1,3,5...)
+                    const newHeight = ((currentHeight + 2 - 1) % 6) + 1;
+                    
+                    console.log(`Elevator height change: ${currentHeight} → ${newHeight}`);
+                    
+                    // Update the tile data
+                    currentTile.h = newHeight;
+                    
+                    // Remove old elevator box
+                    scene.remove(box);
+                    const boxIndexInArray = boxes.indexOf(box);
+                    if (boxIndexInArray > -1) {
+                        boxes.splice(boxIndexInArray, 1);
+                    }
+                    
+                    // Create new elevator box with updated height
+                    const newBox = createBox(bot.position.x - levelData.map.length/2, bot.position.y - levelData.map[0].length/2, newHeight, 'e');
+                    scene.add(newBox);
+                    boxes.splice(boxIndexInArray, 0, newBox);
+                    
+                    // Update bot position to match new elevator height with a small delay
+                    setTimeout(() => {
+                        console.log('Updating bot position after elevator change...');
+                        updateBotPosition();
+                    }, 50);
+                    
+                    console.log(`Elevator activated: height ${currentHeight} → ${newHeight}`);
+                } else {
+                    console.log('No elevator box found at position:', bot.position);
+                }
+            }
+        }
+        
+        function botTurnLeft() {
+            bot.direction = (bot.direction + 1) % 4;
+        }
+        
+        function botTurnRight() {
+            bot.direction = (bot.direction - 1 + 4) % 4;
+        }
+        
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

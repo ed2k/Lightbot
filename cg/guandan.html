@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guandan (掼蛋)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .game-container {
+            background: #2d3748;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            max-width: 1400px;
+            width: 100%;
+        }
+        .game-info {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            color: white;
+        }
+        .info-item { font-weight: bold; }
+        .info-item span { color: #fbbf24; margin-left: 5px; }
+        .game-table {
+            position: relative;
+            width: 100%;
+            height: 700px;
+            background: linear-gradient(135deg, #1a472a 0%, #0d5c29 100%);
+            border-radius: 20px;
+            border: 4px solid #8b6914;
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.3);
+        }
+        .player-area {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .player-area.south { bottom: 10px; left: 50%; transform: translateX(-50%); }
+        .player-area.north { top: 10px; left: 50%; transform: translateX(-50%); }
+        .player-area.east { right: 10px; top: 50%; transform: translateY(-50%); }
+        .player-area.west { left: 10px; top: 50%; transform: translateY(-50%); }
+        .player-name {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+        .player-name.active { background: #fbbf24; animation: pulse 1s infinite; }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .hand {
+            display: flex;
+            gap: 3px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 900px;
+        }
+        .player-area.east .hand,
+        .player-area.west .hand { max-width: 120px; }
+        .card {
+            width: 45px;
+            height: 63px;
+            background: white;
+            border: 2px solid #333;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 11px;
+            font-weight: bold;
+            position: relative;
+        }
+        .card:hover { transform: translateY(-15px); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5); }
+        .card.selected { transform: translateY(-20px); background: #fef3c7; }
+        .card.red { color: #dc2626; }
+        .card.black { color: #000; }
+        .card-rank { font-size: 16px; }
+        .card-suit { font-size: 18px; }
+        .center-area {
+            position: absolute;
+            top: 35%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .play-area {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            min-width: 400px;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .last-play {
+            display: flex;
+            gap: 3px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            min-height: 80px;
+        }
+        .player-play-area {
+            position: absolute;
+            display: flex;
+            gap: 3px;
+            flex-wrap: wrap;
+            justify-content: center;
+            min-height: 70px;
+            min-width: 100px;
+        }
+        .player-play-area.south {
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: 600px;
+        }
+        .player-play-area.north {
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: 600px;
+        }
+        .player-play-area.east {
+            right: 150px;
+            top: 50%;
+            transform: translateY(-50%);
+            max-width: 150px;
+        }
+        .player-play-area.west {
+            left: 150px;
+            top: 50%;
+            transform: translateY(-50%);
+            max-width: 150px;
+        }
+        .play-info {
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .action-button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            background: #10b981;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        .action-button:hover { background: #059669; transform: scale(1.05); }
+        .action-button:disabled { background: #6b7280; cursor: not-allowed; opacity: 0.5; }
+        .action-button.pass { background: #ef4444; }
+        .action-button.pass:hover { background: #dc2626; }
+        .message {
+            background: rgba(251, 191, 36, 0.95);
+            padding: 15px 30px;
+            border-radius: 10px;
+            color: #78350f;
+            font-weight: bold;
+            text-align: center;
+            font-size: 16px;
+        }
+        .level-display {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+        }
+        .level-display .current-level {
+            font-size: 24px;
+            color: #dc2626;
+        }
+        .hidden { display: none !important; }
+        
+        /* Game Log Styles */
+        .game-log-container {
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .game-log-header {
+            color: #fbbf24;
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .game-log-header button {
+            padding: 4px 12px;
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+        }
+        .game-log-header button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .game-log-entries {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .log-entry {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 10px;
+            color: white;
+            font-size: 13px;
+            border-left: 3px solid #10b981;
+        }
+        .log-entry.pass {
+            border-left-color: #ef4444;
+        }
+        .log-entry .player-name-log {
+            font-weight: bold;
+            color: #fbbf24;
+        }
+        .log-entry .play-type {
+            font-weight: bold;
+            color: #10b981;
+        }
+        .log-entry.pass .play-type {
+            color: #ef4444;
+        }
+        .log-entry .cards-played {
+            display: flex;
+            gap: 3px;
+            flex-wrap: wrap;
+            margin-top: 5px;
+        }
+        .log-entry .mini-card {
+            display: inline-block;
+            padding: 2px 6px;
+            background: white;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .log-entry .mini-card.red { color: #dc2626; }
+        .log-entry .mini-card.black { color: #000; }
+        .log-entry .timestamp {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-info">
+            <div class="info-item">Current Level: <span id="current-level">A</span></div>
+            <div class="info-item">Team NS: <span id="team-ns-level">A</span></div>
+            <div class="info-item">Team EW: <span id="team-ew-level">A</span></div>
+            <div class="info-item">Cards Left: <span id="cards-left">27</span></div>
+        </div>
+        
+        <div class="game-table">
+            <div class="player-area north">
+                <div class="player-name" id="name-north">North (Partner)</div>
+                <div class="hand" id="hand-north"></div>
+            </div>
+            
+            <div class="player-area east">
+                <div class="player-name" id="name-east">East</div>
+                <div class="hand" id="hand-east"></div>
+            </div>
+            
+            <div class="player-area south">
+                <div class="hand" id="hand-south"></div>
+                <div class="player-name" id="name-south">South (You)</div>
+            </div>
+            
+            <div class="player-area west">
+                <div class="player-name" id="name-west">West</div>
+                <div class="hand" id="hand-west"></div>
+            </div>
+            
+            <div class="player-play-area south" id="play-south"></div>
+            <div class="player-play-area north" id="play-north"></div>
+            <div class="player-play-area east" id="play-east"></div>
+            <div class="player-play-area west" id="play-west"></div>
+            
+            <div class="center-area">
+                <div class="level-display">
+                    <div>Playing for Level: <span class="current-level" id="display-level">A</span></div>
+                </div>
+                
+                <div class="play-area">
+                    <div class="play-info" id="play-info">Game starting...</div>
+                    <div class="last-play" id="last-play"></div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="action-button" id="play-btn" onclick="game.playSelected()">Play Cards</button>
+                    <button class="action-button pass" id="pass-btn" onclick="game.pass()">Pass</button>
+                    <button class="action-button" onclick="game.clearSelection()">Clear</button>
+                </div>
+                
+                <div class="message hidden" id="message"></div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <button class="action-button" onclick="game.newGame()">New Game</button>
+        </div>
+        
+        <!-- Game Log Section -->
+        <div class="game-log-container" id="game-log-container">
+            <div class="game-log-header">
+                <span>📜 Game Log</span>
+                <button onclick="clearGameLog()">Clear</button>
+            </div>
+            <div class="game-log-entries" id="game-log-entries">
+                <div style="color: #9ca3af; text-align: center; padding: 20px;">No plays yet...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="guandan.js"></script>
+</body>
+</html>

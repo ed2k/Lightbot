@@ -11,6 +11,7 @@ Automate interaction with chat interface:
 from auto import ScreenAutomation
 import time
 import subprocess
+import re
 
 # Try to import PyWinCtl for accurate window detection
 try:
@@ -189,7 +190,7 @@ def find_specific_chat_box(window_title: str = "number24"):
     time.sleep(0.5)
     
     # Step 2: Find window boundaries using PyWinCtl or OCR
-    print("Step 2: Detecting window boundaries...")
+    print("Step 2: Detecting front window boundaries...")
     screen_size = auto.get_screen_size()
     
     # Track if we successfully used PyWinCtl
@@ -198,7 +199,7 @@ def find_specific_chat_box(window_title: str = "number24"):
     # Try PyWinCtl first for accurate window detection
     if HAS_PYWINCTL:
         print("  Using PyWinCtl for accurate window detection...")
-        windows = pwc.getWindowsWithTitle(window_title)
+        windows = pwc.getWindowsWithTitle(window_title, condition=pwc.Re.STARTSWITH)
         
         if windows:
             window = windows[0]
@@ -279,11 +280,11 @@ def find_specific_chat_box(window_title: str = "number24"):
             print(f"    Top edge: {window_top}, Bottom edge: {window_top + window_height}")
     
     # Step 3: Define bottom-right region of the WINDOW (not screen)
-    print("\nStep 3: Looking for 'Claude' in window's bottom-right...")
+    print("\nStep 3: Looking for 'Gemini' in window's bottom-right...")
     
     # Bottom-right corner of the window (right 50%, bottom 20%)
     region_left = window_left + int(window_width * 0.5)
-    region_top = window_top + int(window_height * 0.7)
+    region_top = window_top + int(window_height * 0.8)
     region_width = int(window_width * 0.5)
     region_height = int(window_height * 0.2)
     
@@ -299,7 +300,7 @@ def find_specific_chat_box(window_title: str = "number24"):
     
     # Try various text patterns
     search_terms = [
-        "Code",
+        "Gemini",
     ]
     
     claude_coords = None

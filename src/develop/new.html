@@ -3,43 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LightBot 3D - Three.js Version</title>
+    <title>LightBot 3D - Complete Game</title>
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
-            background: #1a1a1a;
+            box-sizing: border-box;
+        }
+
+        body {
             font-family: 'Arial', sans-serif;
+            background: #1a1a1a;
+            color: white;
             overflow: hidden;
         }
-        
+
         #container {
             position: relative;
             width: 100vw;
             height: 100vh;
+            display: flex;
         }
-        
+
         #gameCanvas {
+            flex: 1;
             display: block;
         }
-        
-        #ui {
+
+        #ui-panel {
             position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 100;
-            color: white;
-        }
-        
-        #controls {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
+            top: 0;
+            right: 0;
+            width: 350px;
+            height: 100vh;
+            background: rgba(26, 26, 26, 0.95);
+            border-left: 2px solid #4CAF50;
+            padding: 20px;
+            overflow-y: auto;
             z-index: 100;
         }
-        
+
+        #ui-panel h2 {
+            color: #4CAF50;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        #ui-panel h3 {
+            color: #66BB6A;
+            margin: 10px 0 5px 0;
+            font-size: 14px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
         button {
-            margin: 5px;
+            margin: 5px 0;
             padding: 10px 15px;
             background: #4CAF50;
             color: white;
@@ -47,694 +72,1078 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 14px;
+            width: 100%;
+            transition: background 0.3s;
         }
-        
+
         button:hover {
             background: #45a049;
         }
-        
-        #info {
+
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin: 10px 0;
+        }
+
+        .controls button {
+            flex: 1;
+            min-width: 100px;
+        }
+
+        #instructions-palette {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            margin: 10px 0;
+        }
+
+        #instructions-palette button {
+            padding: 8px;
+            font-size: 12px;
+            background: #2196F3;
+        }
+
+        #instructions-palette button:hover {
+            background: #1976D2;
+        }
+
+        .program-area {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid #555;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            min-height: 80px;
+        }
+
+        .program-area.focused {
+            border-color: #4CAF50;
+        }
+
+        .program-area h4 {
+            color: #4CAF50;
+            font-size: 12px;
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
+
+        .instruction-list {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3px;
+            min-height: 40px;
+        }
+
+        .instruction-item {
+            background: #2196F3;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .instruction-item:hover {
+            background: #F44336;
+        }
+
+        #level-list {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin: 10px 0;
+        }
+
+        .level-button {
+            padding: 15px 5px;
+            font-size: 12px;
+            background: #666;
+        }
+
+        .level-button.completed {
+            background: #4CAF50;
+        }
+
+        .level-button.gold {
+            background: #FFD700;
+            color: #000;
+        }
+
+        .level-button.silver {
+            background: #C0C0C0;
+            color: #000;
+        }
+
+        .level-button.bronze {
+            background: #CD7F32;
+            color: #fff;
+        }
+
+        #info-panel {
             position: absolute;
             top: 20px;
-            right: 20px;
-            color: white;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 50;
+        }
+
+        #info-panel h2 {
+            color: #4CAF50;
+            margin-bottom: 5px;
+        }
+
+        #camera-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 50;
+        }
+
+        #camera-controls button {
+            margin: 2px;
+            padding: 8px 12px;
             font-size: 12px;
+            width: auto;
+        }
+
+        .dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #2c2c2c;
+            border: 3px solid #4CAF50;
+            border-radius: 10px;
+            padding: 30px;
+            z-index: 200;
+            min-width: 300px;
+            text-align: center;
+            display: none;
+        }
+
+        .dialog.active {
+            display: block;
+        }
+
+        .dialog h2 {
+            color: #4CAF50;
+            margin-bottom: 15px;
+        }
+
+        .dialog .medal {
+            font-size: 48px;
+            margin: 20px 0;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 199;
+            display: none;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        #execution-status {
+            background: rgba(255, 193, 7, 0.2);
+            border: 2px solid #FFC107;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            text-align: center;
+            display: none;
+        }
+
+        #execution-status.active {
+            display: block;
         }
     </style>
 </head>
 <body>
     <div id="container">
-        <div id="ui">
-            <h2>LightBot 3D - Level 20</h2>
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="info-panel">
+            <h2 id="level-title">LightBot 3D</h2>
+            <p id="level-info"></p>
         </div>
-        
-        <div id="controls">
-            <button onclick="loadLevel()">Reload Level</button>
-            <button onclick="addInstruction('walk')">Walk</button>
-            <button onclick="addInstruction('jump')">Jump</button>
-            <button onclick="addInstruction('light')">Light</button>
-            <button onclick="addInstruction('turnLeft')">Turn Left</button>
-            <button onclick="addInstruction('turnRight')">Turn Right</button>
-            <button onclick="executeInstructions()">Run</button>
-            <button onclick="clearInstructions()">Clear</button>
-            <button onclick="resetCamera()">Reset Camera</button>
-            <button onclick="toggleWireframe()">Toggle Wireframe</button>
+
+        <div id="camera-controls">
+            <button onclick="game.resetCamera()">Reset Camera</button>
+            <button onclick="game.toggleWireframe()">Wireframe</button>
         </div>
-        
-        <div id="info">
-            <p>Mouse: Rotate | Wheel: Zoom | Right-click: Pan</p>
+
+        <div id="ui-panel">
+            <!-- Welcome Screen -->
+            <div id="welcome-screen" class="screen active">
+                <h2>🤖 LightBot 3D</h2>
+                <p style="margin: 15px 0; line-height: 1.6;">
+                    Program the robot to light up all the blue tiles!
+                </p>
+                <button onclick="game.showScreen('level-select')">Start Game</button>
+                <button onclick="game.showScreen('help')">How to Play</button>
+            </div>
+
+            <!-- Help Screen -->
+            <div id="help-screen" class="screen">
+                <h2>How to Play</h2>
+                <div style="text-align: left; line-height: 1.6; font-size: 13px; margin: 15px 0;">
+                    <h3>Goal</h3>
+                    <p>Light up all blue tiles by programming the robot.</p>
+
+                    <h3>Instructions</h3>
+                    <p><strong>Walk:</strong> Move forward (same height only)<br>
+                    <strong>Jump:</strong> Jump up 1 level or down any levels<br>
+                    <strong>Light:</strong> Toggle light on/off<br>
+                    <strong>Turn Left/Right:</strong> Rotate 90°<br>
+                    <strong>Proc1/Proc2:</strong> Call procedure</p>
+
+                    <h3>Controls</h3>
+                    <p>• Click instructions to add to program<br>
+                    • Click instruction in program to remove<br>
+                    • Click program area name to switch focus<br>
+                    • Use Run/Fast buttons to execute</p>
+
+                    <h3>Medals</h3>
+                    <p>🥇 Gold | 🥈 Silver | 🥉 Bronze<br>
+                    Earned by using fewer instructions!</p>
+                </div>
+                <button onclick="game.showScreen('welcome')">Back</button>
+            </div>
+
+            <!-- Level Select Screen -->
+            <div id="level-select-screen" class="screen">
+                <h2>Select Level</h2>
+                <div id="level-list"></div>
+                <button onclick="game.showScreen('welcome')">Back to Menu</button>
+            </div>
+
+            <!-- Game Screen -->
+            <div id="game-screen" class="screen">
+                <h2>Programming</h2>
+
+                <div id="execution-status">
+                    <strong>⚙️ Executing...</strong>
+                </div>
+
+                <div class="controls">
+                    <button onclick="game.runProgram()" id="run-button">▶️ Run</button>
+                    <button onclick="game.runProgram(true)" id="fast-button">⏩ Fast</button>
+                    <button onclick="game.stopExecution()" id="stop-button" style="display:none; background:#F44336">⏹️ Stop</button>
+                </div>
+
+                <div class="controls">
+                    <button onclick="game.clearPrograms()">🗑️ Clear All</button>
+                    <button onclick="game.showScreen('level-select')">📋 Levels</button>
+                </div>
+
+                <h3>Instructions</h3>
+                <div id="instructions-palette">
+                    <button onclick="game.addInstruction('walk')">⬆️ Walk</button>
+                    <button onclick="game.addInstruction('jump')">⤴️ Jump</button>
+                    <button onclick="game.addInstruction('turnLeft')">↪️ Left</button>
+                    <button onclick="game.addInstruction('turnRight')">↩️ Right</button>
+                    <button onclick="game.addInstruction('light')">💡 Light</button>
+                    <button onclick="game.addInstruction('proc1')">P1</button>
+                    <button onclick="game.addInstruction('proc2')">P2</button>
+                </div>
+
+                <h3>Programs</h3>
+                <div class="program-area focused" id="main-program">
+                    <h4 onclick="game.focusProgram('main')">Main Program</h4>
+                    <ul class="instruction-list" id="main-list"></ul>
+                </div>
+
+                <div class="program-area" id="proc1-program">
+                    <h4 onclick="game.focusProgram('proc1')">Procedure 1</h4>
+                    <ul class="instruction-list" id="proc1-list"></ul>
+                </div>
+
+                <div class="program-area" id="proc2-program">
+                    <h4 onclick="game.focusProgram('proc2')">Procedure 2</h4>
+                    <ul class="instruction-list" id="proc2-list"></ul>
+                </div>
+            </div>
         </div>
+    </div>
+
+    <!-- Dialogs -->
+    <div class="overlay" id="dialog-overlay" onclick="game.closeDialog()"></div>
+    <div class="dialog" id="complete-dialog">
+        <h2>🎉 Level Complete!</h2>
+        <div class="medal" id="medal-display"></div>
+        <p id="complete-message"></p>
+        <button onclick="game.nextLevel()">Next Level</button>
+        <button onclick="game.showScreen('level-select')">Level Select</button>
     </div>
 
     <!-- Three.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    
 
     <script>
+    // ============================================================================
+    // LIGHTBOT GAME - Complete Implementation
+    // ============================================================================
+
+    const game = {
+        // Three.js components
+        scene: null,
+        camera: null,
+        renderer: null,
+        controls: null,
+        boxes: [],
+        botMesh: null,
+
         // Game state
-        let scene, camera, renderer, controls;
-        let boxes = [];
-        let botMesh;
-        let isExecuting = false;
-        let instructionQueue = [];
-        let currentLevel = 19; // Use level 19 (displayed as Level 20)
-        let levelData; // Store level data globally to persist changes
-        let currentInstructions = []; // Store current instruction sequence
-        let executionQueue = []; // Queue for instruction execution
-        let currentAnimation = 'stand'; // Current bot animation state
-        
+        currentLevel: 0,
+        focusedProgram: 'main',
+        isExecuting: false,
+        executionSpeed: 500, // ms between instructions
+        wireframeMode: false,
+
         // Bot state
-        let bot = {
+        bot: {
             position: { x: 0, y: 0 },
             direction: 0, // 0=SE, 1=NE, 2=NW, 3=SW
             startPosition: { x: 0, y: 0 },
-            startDirection: 0
-        };
-        
-        // Colors matching original game
-        const colors = {
-            box: {
-                top: 0xc9d3d9,
-                front: 0xadb8bd,
-                side: 0xe5f0f5
-            },
-            lightBox: {
-                on: 0xFFE545,
-                off: 0x0468fb
-            },
+            startDirection: 0,
+            currentAnimation: 'stand'
+        },
+
+        // Programs
+        programs: {
+            main: [],
+            proc1: [],
+            proc2: []
+        },
+
+        // Level data
+        levelData: null,
+
+        // Colors
+        colors: {
+            box: { top: 0xc9d3d9, front: 0xadb8bd, side: 0xe5f0f5 },
+            lightBox: { on: 0xFFE545, off: 0x0468fb },
             elevator: 0xdc84bf,
             stroke: 0x485256,
             bot: 0xff6b35
-        };
-        
-        // Instructions
-        const instructions = {
-            walk: { name: 'walk', display: 'Walk Forward' },
-            jump: { name: 'jump', display: 'Jump' },
-            light: { name: 'light', display: 'Light' },
-            turnLeft: { name: 'turnLeft', display: 'Turn Left' },
-            turnRight: { name: 'turnRight', display: 'Turn Right' }
-        };
-        
-        // Bot animations - sprite sheet coordinates
-        const botAnimations = {
-            stand: { sX: 0, frames: 1 },
-            walk: { sX: 80, frames: 3 },
-            light: { sX: 480, frames: 2 },
-            jumpUp: { sX: 320, frames: 1 },
-            jumpDown: { sX: 400, frames: 1 }
-        };
-        
-        // Get level data - hardcoded level 19
-        function getLevelData() {
-            // Initialize level data once and store globally
-            if (!levelData) {
-                levelData = {
-                    "start": {"x": 2, "y": 0, "d": 2},
-                    "map": [
-                        [{"h": 1, "t": "n"}, {"h": 1, "t": "n"}, {"h": 1, "t": "n"}],
-                        [{"h": 1, "t": "n"}, {"h": 1, "t": "n"}, {"h": 1, "t": "n"}],
-                        [{"h": 1, "t": "n"}, {"h": 1, "t": "e"}, {"h": 1, "t": "l"}],
-                        [{"h": 1, "t": "n"}, {"h": 1, "t": "n"}, {"h": 1, "t": "n"}],
-                        [{"h": 1, "t": "n"}, {"h": 1, "t": "n"}, {"h": 1, "t": "n"}]
-                    ]
-                };
-            }
-            return levelData;
-        }
+        },
 
-        function init() {
+        // Instruction definitions
+        instructionDefs: {
+            walk: { name: 'walk', display: '⬆️ Walk', execute: 'walk' },
+            jump: { name: 'jump', display: '⤴️ Jump', execute: 'jump' },
+            light: { name: 'light', display: '💡 Light', execute: 'light' },
+            turnLeft: { name: 'turnLeft', display: '↪️ Left', execute: 'turnLeft' },
+            turnRight: { name: 'turnRight', display: '↩️ Right', execute: 'turnRight' },
+            proc1: { name: 'proc1', display: 'P1', execute: 'proc1' },
+            proc2: { name: 'proc2', display: 'P2', execute: 'proc2' }
+        },
+
+        // All 24 levels
+        levels: [
+  {"direction": 0, "position": {"x": 4, "y": 5}, "map": [[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}]], "medals": {"gold": 3, "silver": 4, "bronze": 5}},
+  {"direction": 0, "position": {"x": 2, "y": 5}, "map": [[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"l"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"l"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"l"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}]], "medals": {"gold": 5, "silver": 7, "bronze": 11}},
+  {"direction": 0, "position": {"x": 4, "y": 6}, "map": [[{"h":4, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":4, "t":"b"}],[{"h":3, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":3, "t":"b"}],[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":4, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":3, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":3, "t":"b"}],[{"h":4, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":4, "t":"b"}]], "medals": {"gold": 6, "silver": 8, "bronze": 11}},
+  {"direction": 0, "position": {"x": 4, "y": 7}, "map": [[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":2, "t":"b"}, {"h":2, "t":"b"},{"h":2, "t":"b"},{"h":2, "t":"b"},{"h":2, "t":"b"}, {"h":2, "t":"b"},{"h":2, "t":"b"},{"h":2, "t":"b"},{"h":2, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}]], "medals": {"gold": 4, "silver": 5, "bronze": 6}},
+  {"direction": 1, "position": {"x": 1, "y": 5}, "map": [[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"},{"h":3, "t":"b"}, {"h":3, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":3, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":3, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":3, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":3, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":3, "t":"l"},{"h":1, "t":"b"}]], "medals": {"gold": 7, "silver": 8, "bronze": 11}},
+  {"direction": 0, "position": {"x": 2, "y": 4}, "map": [[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":6, "t":"l"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":2, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":5, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":3, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":4, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":3, "t":"b"},{"h":3, "t":"b"},{"h":3, "t":"b"}, {"h":3, "t":"b"},{"h":3, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}]], "medals": {"gold": 7, "silver": 10, "bronze": 13}},
+  {"direction": 1, "position": {"x": 1, "y": 5}, "map": [[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"},{"h":3, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":4, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":5, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":3, "t":"l"},{"h":3, "t":"b"},{"h":3, "t":"b"},{"h":3, "t":"b"}, {"h":3, "t":"b"},{"h":3, "t":"b"},{"h":3, "t":"l"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}]], "medals": {"gold": 10, "silver": 17, "bronze": 22}},
+  {"direction": 1, "position": {"x": 1, "y": 3}, "map": [[{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":3, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":3, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":3, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":5, "t":"b"}, {"h":5, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"},{"h":3, "t":"b"}, {"h":4, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":4, "t":"b"}, {"h":5, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":3, "t":"b"}, {"h":3, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":3, "t":"l"},{"h":1, "t":"b"},{"h":1, "t":"b"}]], "medals": {"gold": 16, "silver": 25, "bronze": 26}},
+  {"direction": 0, "position": {"x": 4, "y": 7}, "map": [[{"h":3, "t":"b"},{"h":3, "t":"b"},{"h":2, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":2, "t":"b"},{"h":3, "t":"b"},{"h":3, "t":"b"}],[{"h":3, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":3, "t":"b"}],[{"h":2, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}]], "medals": {"gold": 3, "silver": 14, "bronze": 15}},
+  {"direction": 0, "position": {"x": 4, "y": 7}, "map": [[{"h":3, "t":"b"},{"h":3, "t":"b"},{"h":2, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":2, "t":"b"},{"h":3, "t":"b"},{"h":3, "t":"b"}],[{"h":3, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":3, "t":"b"}],[{"h":2, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":3, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":4, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":3, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":2, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":4, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}]], "medals": {"gold": 3, "silver": 7, "bronze": 13}},
+  {"direction": 0, "position": {"x": 4, "y": 7}, "map": [[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"l"},{"h":1, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"l"},{"h":1, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"l"},{"h":1, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"l"},{"h":1, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"l"},{"h":1, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"l"},{"h":1, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"l"},{"h":1, "t":"l"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}]], "medals": {"gold": 7, "silver": 9, "bronze": 11}},
+  {"direction": 0, "position": {"x": 1, "y": 7}, "map": [[{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":2, "t":"l"},{"h":1, "t":"l"},{"h":2, "t":"l"},{"h":1, "t":"l"}, {"h":2, "t":"l"},{"h":3, "t":"b"}],[{"h":1, "t":"b"},{"h":1, "t":"l"}, {"h":2, "t":"l"},{"h":1, "t":"l"},{"h":2, "t":"l"},{"h":1, "t":"l"}, {"h":2, "t":"l"},{"h":3, "t":"b"}],[{"h":1, "t":"b"},{"h":1, "t":"l"}, {"h":2, "t":"l"},{"h":1, "t":"l"},{"h":2, "t":"l"},{"h":1, "t":"l"}, {"h":2, "t":"l"},{"h":3, "t":"b"}],[{"h":1, "t":"b"},{"h":1, "t":"l"}, {"h":2, "t":"l"},{"h":1, "t":"l"},{"h":2, "t":"l"},{"h":1, "t":"l"}, {"h":2, "t":"l"},{"h":3, "t":"b"}],[{"h":1, "t":"b"},{"h":1, "t":"l"}, {"h":2, "t":"l"},{"h":1, "t":"l"},{"h":2, "t":"l"},{"h":1, "t":"l"}, {"h":2, "t":"l"},{"h":3, "t":"b"}],[{"h":1, "t":"b"},{"h":1, "t":"l"}, {"h":2, "t":"l"},{"h":1, "t":"l"},{"h":2, "t":"l"},{"h":1, "t":"l"}, {"h":2, "t":"l"},{"h":3, "t":"b"}],[{"h":1, "t":"b"},{"h":1, "t":"l"}, {"h":2, "t":"l"},{"h":1, "t":"l"},{"h":2, "t":"l"},{"h":1, "t":"l"}, {"h":2, "t":"l"},{"h":3, "t":"b"}],[{"h":1, "t":"b"},{"h":1, "t":"l"}, {"h":2, "t":"l"},{"h":1, "t":"l"},{"h":2, "t":"l"},{"h":1, "t":"l"}, {"h":2, "t":"l"},{"h":3, "t":"b"}]], "medals": {"gold": 13, "silver": 33, "bronze": 104}},
+  {"direction": 0, "position": {"x": 1, "y": 6}, "map": [[{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":2, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"},{"h":2, "t":"b"},{"h":3, "t":"l"},{"h":2, "t":"l"}, {"h":2, "t":"l"},{"h":3, "t":"l"},{"h":2, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"l"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":2, "t":"l"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"l"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":2, "t":"l"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"},{"h":2, "t":"b"},{"h":3, "t":"l"},{"h":2, "t":"l"}, {"h":2, "t":"l"},{"h":3, "t":"l"},{"h":2, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":2, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}]], "medals": {"gold": 11, "silver": 29, "bronze": 29}},
+  {"direction": 1, "position": {"x": 1, "y": 5}, "map": [[{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"},{"h":2, "t":"l"}, {"h":2, "t":"b"},{"h":2, "t":"l"},{"h":1, "t":"b"}],[{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":2, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"},{"h":2, "t":"l"},{"h":2, "t":"b"},{"h":2, "t":"l"}, {"h":2, "t":"b"},{"h":2, "t":"l"},{"h":1, "t":"b"}],[{"h":1, "t":"b"},{"h":2, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":2, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"},{"h":2, "t":"l"},{"h":2, "t":"b"},{"h":2, "t":"l"}, {"h":2, "t":"b"},{"h":2, "t":"l"},{"h":1, "t":"b"}],[{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}]], "medals": {"gold": 7, "silver": 24, "bronze": 28}},
+  {"direction": 1, "position": {"x": 1, "y": 4}, "map": [[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":5, "t":"l"},{"h":4, "t":"l"}, {"h":3, "t":"l"},{"h":2, "t":"l"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":4, "t":"l"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":3, "t":"l"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":3, "t":"l"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":4, "t":"l"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"l"},{"h":3, "t":"l"}, {"h":4, "t":"l"},{"h":5, "t":"l"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":3, "t":"l"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":4, "t":"l"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":4, "t":"l"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":3, "t":"l"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":5, "t":"l"},{"h":4, "t":"l"}, {"h":3, "t":"l"},{"h":2, "t":"l"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}]], "medals": {"gold": 13, "silver": 16, "bronze": 26}},
+  {"direction": 1, "position": {"x": 1, "y": 3}, "map": [[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":2, "t":"l"},{"h":2, "t":"b"},{"h":2, "t":"b"},{"h":2, "t":"b"}, {"h":2, "t":"l"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":2, "t":"b"},{"h":3, "t":"l"},{"h":3, "t":"b"},{"h":3, "t":"l"}, {"h":2, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":2, "t":"b"},{"h":3, "t":"b"},{"h":4, "t":"l"},{"h":3, "t":"b"}, {"h":2, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":2, "t":"b"},{"h":3, "t":"l"},{"h":3, "t":"b"},{"h":3, "t":"l"}, {"h":2, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":2, "t":"l"},{"h":2, "t":"b"},{"h":2, "t":"b"},{"h":2, "t":"b"}, {"h":2, "t":"l"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"}]], "medals": {"gold": 10, "silver": 32, "bronze": 43}},
+  {"direction": 0, "position": {"x": 0, "y": 6}, "map": [[{"h":1, "t":"b"}, {"h":3, "t":"l"},{"h":3, "t":"l"}],[{"h":1, "t":"b"}, {"h":3, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":3, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":5, "t":"b"},{"h":5, "t":"b"}],[{"h":2, "t":"b"}, {"h":3, "t":"b"},{"h":4, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":3, "t":"b"}],[{"h":4, "t":"l"}, {"h":3, "t":"b"},{"h":3, "t":"b"}]], "medals": {"gold": 18, "silver": 20, "bronze": 22}},
+  {"direction": 3, "position": {"x": 2, "y": 0}, "map": [[{"h":1, "t":"b"}, {"h":2, "t":"l"},{"h":2, "t":"b"},{"h":2, "t":"l"}, {"h":1, "t":"b"}],[{"h":2, "t":"l"}, {"h":2, "t":"l"},{"h":1, "t":"b"},{"h":2, "t":"l"}, {"h":2, "t":"l"}],[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":2, "t":"b"}],[{"h":2, "t":"l"}, {"h":2, "t":"l"},{"h":1, "t":"b"},{"h":2, "t":"l"}, {"h":2, "t":"l"}],[{"h":1, "t":"b"}, {"h":2, "t":"l"},{"h":2, "t":"b"},{"h":2, "t":"l"}, {"h":1, "t":"b"}]], "medals": {"gold": 9, "silver": 10, "bronze": 16}},
+  {"direction": 2, "position": {"x": 0, "y": 2}, "map": [[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"l"},{"h":1, "t":"b"},{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"l"},{"h":1, "t":"b"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":2, "t":"l"},{"h":2, "t":"b"},{"h":1, "t":"l"},{"h":2, "t":"b"}, {"h":1, "t":"l"},{"h":1, "t":"b"},{"h":2, "t":"l"},{"h":1, "t":"b"}],[{"h":1, "t":"l"}, {"h":1, "t":"b"},{"h":2, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":2, "t":"b"},{"h":2, "t":"b"},{"h":1, "t":"l"}],[{"h":1, "t":"b"}, {"h":1, "t":"l"},{"h":1, "t":"b"},{"h":2, "t":"b"},{"h":2, "t":"b"}, {"h":2, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"l"},{"h":1, "t":"b"}],[{"h":2, "t":"b"}, {"h":2, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"},{"h":1, "t":"b"}, {"h":2, "t":"b"},{"h":1, "t":"b"},{"h":2, "t":"b"},{"h":2, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"l"},{"h":1, "t":"b"},{"h":2, "t":"b"},{"h":2, "t":"b"}, {"h":2, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"l"},{"h":1, "t":"b"}],[{"h":1, "t":"l"}, {"h":2, "t":"b"},{"h":2, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":2, "t":"b"},{"h":1, "t":"b"},{"h":1, "t":"l"}],[{"h":1, "t":"b"}, {"h":2, "t":"l"},{"h":1, "t":"b"},{"h":1, "t":"l"},{"h":2, "t":"b"}, {"h":1, "t":"l"},{"h":2, "t":"b"},{"h":2, "t":"l"},{"h":1, "t":"b"}],[{"h":1, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"l"},{"h":1, "t":"b"},{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":1, "t":"l"},{"h":1, "t":"b"},{"h":1, "t":"b"}]], "medals": {"gold": 9, "silver": 11, "bronze": 13}},
+  {"direction": 2, "position": {"x": 2, "y": 0}, "map": [[{"h":4, "t":"b"}, {"h":4, "t":"b"},{"h":3, "t":"l"},{"h":3, "t":"b"},{"h":3, "t":"b"}, {"h":1, "t":"e"},{"h":4, "t":"b"},{"h":4, "t":"b"}],[{"h":4, "t":"b"}, {"h":3, "t":"l"},{"h":3, "t":"b"},{"h":4, "t":"l"},{"h":4, "t":"l"}, {"h":3, "t":"b"},{"h":3, "t":"l"},{"h":4, "t":"b"}],[{"h":1, "t":"e"}, {"h":3, "t":"b"},{"h":3, "t":"b"},{"h":4, "t":"l"},{"h":4, "t":"l"}, {"h":3, "t":"b"},{"h":3, "t":"b"},{"h":3, "t":"l"}],[{"h":3, "t":"b"}, {"h":4, "t":"l"},{"h":4, "t":"l"},{"h":4, "t":"b"},{"h":4, "t":"b"}, {"h":4, "t":"l"},{"h":4, "t":"l"},{"h":3, "t":"b"}],[{"h":3, "t":"b"}, {"h":4, "t":"l"},{"h":4, "t":"l"},{"h":4, "t":"b"},{"h":4, "t":"b"}, {"h":4, "t":"l"},{"h":4, "t":"l"},{"h":3, "t":"b"}],[{"h":3, "t":"l"}, {"h":3, "t":"b"},{"h":3, "t":"b"},{"h":4, "t":"l"},{"h":4, "t":"l"}, {"h":3, "t":"b"},{"h":3, "t":"b"},{"h":1, "t":"e"}],[{"h":4, "t":"b"}, {"h":3, "t":"l"},{"h":3, "t":"b"},{"h":4, "t":"l"},{"h":4, "t":"l"}, {"h":3, "t":"b"},{"h":3, "t":"l"},{"h":4, "t":"b"}],[{"h":4, "t":"b"}, {"h":4, "t":"b"},{"h":1, "t":"e"},{"h":3, "t":"b"},{"h":3, "t":"b"}, {"h":3, "t":"l"},{"h":4, "t":"b"},{"h":4, "t":"b"}]], "medals": {"gold": 9, "silver": 11, "bronze": 13}},
+  {"direction": 1, "position": {"x": 0, "y": 5}, "map": [[{"h": 1, "t": "b"}, {"h": 1, "t": "b"}, {"h": 1, "t": "l"}, {"h": 1, "t": "l"}, {"h": 2, "t": "l"}, {"h": 1, "t": "b"}, {"h": 1, "t": "l"}, {"h": 1, "t": "b"}, {"h": 1, "t": "b"}],[{"h": 1, "t": "b"}, {"h": 2, "t": "l"}, {"h": 2, "t": "l"}, {"h": 1, "t": "l"}, {"h": 2, "t": "l"}, {"h": 1, "t": "l"}, {"h": 1, "t": "l"}, {"h": 2, "t": "l"}, {"h": 1, "t": "b"}],[{"h": 1, "t": "l"}, {"h": 1, "t": "l"}, {"h": 2, "t": "l"}, {"h": 1, "t": "l"}, {"h": 1, "t": "b"}, {"h": 1, "t": "l"}, {"h": 2, "t": "l"}, {"h": 2, "t": "l"}, {"h": 1, "t": "l"}],[{"h": 1, "t": "b"}, {"h": 1, "t": "l"}, {"h": 1, "t": "l"}, {"h": 2, "t": "l"}, {"h": 2, "t": "b"}, {"h": 2, "t": "l"}, {"h": 1, "t": "l"}, {"h": 1, "t": "l"}, {"h": 1, "t": "l"}],[{"h": 2, "t": "l"}, {"h": 2, "t": "l"}, {"h": 1, "t": "b"}, {"h": 2, "t": "b"}, {"h": 1, "t": "b"}, {"h": 2, "t": "b"}, {"h": 1, "t": "b"}, {"h": 2, "t": "l"}, {"h": 2, "t": "l"}],[{"h": 1, "t": "l"}, {"h": 1, "t": "l"}, {"h": 1, "t": "l"}, {"h": 2, "t": "l"}, {"h": 2, "t": "b"}, {"h": 2, "t": "l"}, {"h": 1, "t": "l"}, {"h": 1, "t": "l"}, {"h": 1, "t": "b"}],[{"h": 1, "t": "l"}, {"h": 2, "t": "l"}, {"h": 2, "t": "l"}, {"h": 1, "t": "l"}, {"h": 1, "t": "b"}, {"h": 1, "t": "l"}, {"h": 2, "t": "l"}, {"h": 1, "t": "l"}, {"h": 1, "t": "l"}],[{"h": 1, "t": "b"}, {"h": 2, "t": "l"}, {"h": 1, "t": "l"}, {"h": 1, "t": "l"}, {"h": 2, "t": "l"}, {"h": 1, "t": "l"}, {"h": 2, "t": "l"}, {"h": 2, "t": "l"}, {"h": 1, "t": "b"}],[{"h": 1, "t": "b"}, {"h": 1, "t": "b"}, {"h": 1, "t": "l"}, {"h": 1, "t": "b"}, {"h": 2, "t": "l"}, {"h": 1, "t": "l"}, {"h": 1, "t": "l"}, {"h": 1, "t": "b"}, {"h": 1, "t": "b"}]], "medals": {"gold": 11, "silver": 13, "bronze": 15}},
+  {"direction": 3, "position": {"x": 0, "y": 0}, "map": [[{"h":4, "t":"e"}, {"h":4, "t":"e"},{"h":2, "t":"b"},{"h":2, "t":"l"}, {"h":1, "t":"b"}],[{"h":2, "t":"l"}, {"h":4, "t":"e"},{"h":3, "t":"e"},{"h":2, "t":"l"}, {"h":2, "t":"l"}],[{"h":2, "t":"b"}, {"h":1, "t":"b"},{"h":3, "t":"e"},{"h":3, "t":"e"}, {"h":2, "t":"b"}],[{"h":2, "t":"l"}, {"h":2, "t":"l"},{"h":1, "t":"b"},{"h":2, "t":"e"}, {"h":1, "t":"e"}],[{"h":5, "t":"e"}, {"h":2, "t":"l"},{"h":2, "t":"b"},{"h":2, "t":"l"}, {"h":2, "t":"e"}]], "medals": {"gold": 9, "silver": 10, "bronze": 16}},
+  {"direction": 2, "position": {"x": 2, "y": 0}, "map": [[{"h":4, "t":"b"}, {"h":4, "t":"b"},{"h":3, "t":"b"},{"h":3, "t":"b"},{"h":3, "t":"b"}, {"h":1, "t":"e"},{"h":4, "t":"b"},{"h":4, "t":"b"}],[{"h":4, "t":"b"}, {"h":3, "t":"e"},{"h":3, "t":"b"},{"h":4, "t":"l"},{"h":4, "t":"b"}, {"h":3, "t":"b"},{"h":3, "t":"e"},{"h":4, "t":"b"}],[{"h":1, "t":"e"}, {"h":3, "t":"b"},{"h":3, "t":"b"},{"h":4, "t":"l"},{"h":4, "t":"l"}, {"h":3, "t":"b"},{"h":3, "t":"b"},{"h":3, "t":"b"}],[{"h":3, "t":"b"}, {"h":4, "t":"b"},{"h":4, "t":"l"},{"h":4, "t":"b"},{"h":4, "t":"b"}, {"h":4, "t":"l"},{"h":4, "t":"l"},{"h":3, "t":"b"}],[{"h":3, "t":"b"}, {"h":4, "t":"l"},{"h":4, "t":"l"},{"h":4, "t":"b"},{"h":4, "t":"b"}, {"h":4, "t":"l"},{"h":4, "t":"b"},{"h":3, "t":"b"}],[{"h":3, "t":"b"}, {"h":3, "t":"b"},{"h":3, "t":"b"},{"h":4, "t":"l"},{"h":4, "t":"l"}, {"h":3, "t":"b"},{"h":3, "t":"b"},{"h":1, "t":"e"}],[{"h":4, "t":"b"}, {"h":3, "t":"e"},{"h":3, "t":"b"},{"h":4, "t":"b"},{"h":4, "t":"l"}, {"h":3, "t":"b"},{"h":3, "t":"e"},{"h":4, "t":"b"}],[{"h":4, "t":"b"}, {"h":4, "t":"b"},{"h":1, "t":"e"},{"h":3, "t":"b"},{"h":3, "t":"b"}, {"h":3, "t":"b"},{"h":4, "t":"b"},{"h":4, "t":"b"}]], "medals": {"gold": 8, "silver": 9, "bronze": 10}},
+  {"direction": 0, "position": {"x": 5, "y": 5}, "map": [[{"h":3, "t":"l"}, {"h":3, "t":"l"},{"h":5, "t":"l"},{"h":5, "t":"l"},{"h":3, "t":"l"}, {"h":3, "t":"l"}],[{"h":0, "t":"e"}, {"h":0, "t":"e"},{"h":0, "t":"e"},{"h":0, "t":"e"},{"h":0, "t":"e"}, {"h":0, "t":"e"}],[{"h":0, "t":"e"}, {"h":0, "t":"e"},{"h":0, "t":"e"},{"h":0, "t":"e"},{"h":0, "t":"e"}, {"h":0, "t":"e"}],[{"h":0, "t":"e"}, {"h":0, "t":"e"},{"h":0, "t":"e"},{"h":0, "t":"e"},{"h":0, "t":"e"}, {"h":0, "t":"e"}],[{"h":0, "t":"e"}, {"h":0, "t":"e"},{"h":0, "t":"e"},{"h":0, "t":"e"},{"h":0, "t":"e"}, {"h":0, "t":"e"}],[{"h":0, "t":"e"}, {"h":0, "t":"e"},{"h":0, "t":"e"},{"h":0, "t":"e"},{"h":0, "t":"e"}, {"h":0, "t":"e"}],[{"h":0, "t":"e"}, {"h":0, "t":"e"},{"h":0, "t":"e"},{"h":0, "t":"e"},{"h":0, "t":"e"}, {"h":0, "t":"e"}]], "medals": {"gold": 8, "silver": 10, "bronze": 12}},
+  {"direction": 0, "position": {"x": 5, "y": 5}, "map": [[{"h":3, "t":"l"}, {"h":3, "t":"l"},{"h":5, "t":"l"},{"h":5, "t":"l"},{"h":3, "t":"l"}, {"h":3, "t":"l"}],[{"h":1, "t":"e"}, {"h":0, "t":"e"},{"h":1, "t":"e"},{"h":0, "t":"e"},{"h":1, "t":"e"}, {"h":0, "t":"e"}],[{"h":0, "t":"e"}, {"h":1, "t":"e"},{"h":0, "t":"e"},{"h":1, "t":"e"},{"h":0, "t":"e"}, {"h":1, "t":"e"}],[{"h":1, "t":"e"}, {"h":0, "t":"e"},{"h":1, "t":"e"},{"h":0, "t":"e"},{"h":1, "t":"e"}, {"h":0, "t":"e"}],[{"h":0, "t":"e"}, {"h":1, "t":"e"},{"h":0, "t":"e"},{"h":1, "t":"e"},{"h":0, "t":"e"}, {"h":1, "t":"e"}],[{"h":1, "t":"e"}, {"h":0, "t":"e"},{"h":1, "t":"e"},{"h":0, "t":"e"},{"h":1, "t":"e"}, {"h":0, "t":"e"}],[{"h":0, "t":"e"}, {"h":1, "t":"e"},{"h":0, "t":"e"},{"h":1, "t":"e"},{"h":0, "t":"e"}, {"h":1, "t":"e"}]], "medals": {"gold": 7, "silver": 9, "bronze": 11}}
+        ],
+
+        // ========================================================================
+        // INITIALIZATION
+        // ========================================================================
+
+        init() {
+            this.initThreeJS();
+            this.initUI();
+            this.loadLevelList();
+            this.animate();
+        },
+
+        initThreeJS() {
             // Create scene
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x2c3e50);
-            
+            this.scene = new THREE.Scene();
+            this.scene.background = new THREE.Color(0x2c3e50);
+
             // Create camera
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(10, 8, 10);
-            
+            this.camera = new THREE.PerspectiveCamera(
+                75,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+            this.camera.position.set(10, 8, 10);
+
             // Create renderer
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            document.getElementById('container').appendChild(renderer.domElement);
-            
+            const canvas = document.getElementById('gameCanvas');
+            this.renderer = new THREE.WebGLRenderer({
+                canvas: canvas,
+                antialias: true
+            });
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
+            this.renderer.shadowMap.enabled = true;
+            this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
             // Add controls
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            
+            this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+            this.controls.enableDamping = true;
+            this.controls.dampingFactor = 0.05;
+
             // Add lighting
-            setupLighting();
-            
-            
-            // Load level
-            loadLevel();
-            
-            // Create bot
-            createBot();
-            
-            // Start animation loop
-            animate();
-            
-            // Handle window resize
-            window.addEventListener('resize', onWindowResize);
-        }
-        
-        function setupLighting() {
-            // Ambient light
             const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
-            scene.add(ambientLight);
-            
-            // Directional light
+            this.scene.add(ambientLight);
+
             const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
             directionalLight.position.set(10, 10, 5);
             directionalLight.castShadow = true;
-            directionalLight.shadow.mapSize.width = 2048;
-            directionalLight.shadow.mapSize.height = 2048;
-            scene.add(directionalLight);
-        }
-        
-        function createBox(x, y, height, type) {
-            const boxGroup = new THREE.Group();
-            
-            if (type === 'e') {
-                // Elevator box - thin stick with base and top
-                createElevatorBox(boxGroup, height);
-            } else {
-                // Regular box or light box
-                createRegularBox(boxGroup, height, type);
+            this.scene.add(directionalLight);
+
+            // Handle window resize
+            window.addEventListener('resize', () => this.onWindowResize());
+        },
+
+        initUI() {
+            // Set up program area click handlers
+            document.getElementById('main-program').querySelector('h4').addEventListener('click', () => this.focusProgram('main'));
+            document.getElementById('proc1-program').querySelector('h4').addEventListener('click', () => this.focusProgram('proc1'));
+            document.getElementById('proc2-program').querySelector('h4').addEventListener('click', () => this.focusProgram('proc2'));
+        },
+
+        // ========================================================================
+        // LEVEL MANAGEMENT
+        // ========================================================================
+
+        loadLevelList() {
+            const listContainer = document.getElementById('level-list');
+            listContainer.innerHTML = '';
+
+            this.levels.forEach((level, index) => {
+                const button = document.createElement('button');
+                button.className = 'level-button';
+                button.textContent = `Level ${index + 1}`;
+                button.onclick = () => this.loadLevel(index);
+
+                // Check for saved medals
+                const savedMedal = localStorage.getItem(`lightbot_level_${index}`);
+                if (savedMedal === '4') button.classList.add('gold');
+                else if (savedMedal === '3') button.classList.add('silver');
+                else if (savedMedal === '2') button.classList.add('bronze');
+                else if (savedMedal) button.classList.add('completed');
+
+                listContainer.appendChild(button);
+            });
+        },
+
+        loadLevel(levelIndex) {
+            this.currentLevel = levelIndex;
+            const level = this.levels[levelIndex];
+
+            // Reset level data
+            this.levelData = JSON.parse(JSON.stringify(level)); // Deep copy
+
+            // Set bot starting position
+            this.bot.position = { ...level.position };
+            this.bot.direction = level.direction;
+            this.bot.startPosition = { ...level.position };
+            this.bot.startDirection = level.direction;
+
+            // Clear existing boxes
+            this.boxes.forEach(box => this.scene.remove(box));
+            this.boxes = [];
+
+            // Create boxes for the level
+            for (let x = 0; x < level.map.length; x++) {
+                for (let y = 0; y < level.map[x].length; y++) {
+                    const tile = level.map[x][y];
+                    const mapX = x - level.map.length / 2;
+                    const mapY = y - level.map[0].length / 2;
+                    const box = this.createBox(mapX, mapY, tile.h, tile.t);
+                    this.scene.add(box);
+                    this.boxes.push(box);
+                }
             }
-            
+
+            // Create or update bot
+            if (!this.botMesh) {
+                this.createBot();
+            } else {
+                this.updateBotPosition();
+            }
+
+            // Clear programs
+            this.clearPrograms();
+
+            // Update UI
+            document.getElementById('level-title').textContent = `Level ${levelIndex + 1}`;
+            document.getElementById('level-info').textContent = `🥇${level.medals.gold} 🥈${level.medals.silver} 🥉${level.medals.bronze}`;
+
+            this.showScreen('game');
+        },
+
+        // ========================================================================
+        // 3D RENDERING
+        // ========================================================================
+
+        createBox(x, y, height, type) {
+            const boxGroup = new THREE.Group();
+
+            if (type === 'e') {
+                this.createElevatorBox(boxGroup, height);
+            } else {
+                this.createRegularBox(boxGroup, height, type);
+            }
+
             boxGroup.position.set(x, 0, y);
+            boxGroup.userData = { x, y, type, originalHeight: height };
+
             return boxGroup;
-        }
-        
-        function createRegularBox(group, height, type) {
-            const boxHeight = height * 0.5; // Apply height scale
-            
-            // Create main box geometry
+        },
+
+        createRegularBox(group, height, type) {
+            const boxHeight = height * 0.5;
             const geometry = new THREE.BoxGeometry(1, boxHeight, 1);
-            
-            // Choose material based on type
+
             let material;
             if (type === 'l') {
-                // Light box - animated material
-                material = new THREE.MeshLambertMaterial({ 
-                    color: colors.lightBox.off,
+                material = new THREE.MeshLambertMaterial({
+                    color: this.colors.lightBox.off,
                     transparent: true,
                     opacity: 0.9
                 });
             } else {
-                // Regular box
-                material = new THREE.MeshLambertMaterial({ color: colors.box.top });
+                material = new THREE.MeshLambertMaterial({ color: this.colors.box.top });
             }
-            
+
             const box = new THREE.Mesh(geometry, material);
             box.position.y = boxHeight / 2;
             box.castShadow = true;
             box.receiveShadow = true;
-            
-            // Add wireframe edges for better visibility
+
             const edges = new THREE.EdgesGeometry(geometry);
-            const edgeMaterial = new THREE.LineBasicMaterial({ 
-                color: colors.stroke,
+            const edgeMaterial = new THREE.LineBasicMaterial({
+                color: this.colors.stroke,
                 linewidth: 2
             });
             const wireframe = new THREE.LineSegments(edges, edgeMaterial);
             wireframe.position.y = boxHeight / 2;
             group.add(wireframe);
-            
-            // Add edge lines for level separation
-            if (height > 1) {
-                for (let level = 1; level < height; level++) {
-                    const lineGeometry = new THREE.BufferGeometry();
-                    const points = [
-                        new THREE.Vector3(-0.5, level * 0.5, -0.5),
-                        new THREE.Vector3(0.5, level * 0.5, -0.5),
-                        new THREE.Vector3(0.5, level * 0.5, 0.5),
-                        new THREE.Vector3(-0.5, level * 0.5, 0.5),
-                        new THREE.Vector3(-0.5, level * 0.5, -0.5)
-                    ];
-                    lineGeometry.setFromPoints(points);
-                    
-                    const lineMaterial = new THREE.LineBasicMaterial({ color: colors.stroke });
-                    const line = new THREE.Line(lineGeometry, lineMaterial);
-                    group.add(line);
-                }
-            }
-            
             group.add(box);
-        }
-        
-        function createElevatorBox(group, height) {
-            const boxHeight = height * 0.5; // Apply height scale
+        },
+
+        createElevatorBox(group, height) {
+            const boxHeight = height * 0.5;
             const stickWidth = 0.1;
-            
+
             // Base platform
             const baseGeometry = new THREE.BoxGeometry(1, 0.25, 1);
-            const baseMaterial = new THREE.MeshLambertMaterial({ color: colors.elevator });
+            const baseMaterial = new THREE.MeshLambertMaterial({ color: this.colors.elevator });
             const base = new THREE.Mesh(baseGeometry, baseMaterial);
             base.position.y = 0.125;
             base.castShadow = true;
-            base.receiveShadow = true;
             group.add(base);
-            
-            // Add wireframe edges to base
-            const baseEdges = new THREE.EdgesGeometry(baseGeometry);
-            const baseEdgeMaterial = new THREE.LineBasicMaterial({ color: colors.stroke, linewidth: 2 });
-            const baseWireframe = new THREE.LineSegments(baseEdges, baseEdgeMaterial);
-            baseWireframe.position.y = 0.125;
-            group.add(baseWireframe);
-            
+
             // Vertical stick
             const stickGeometry = new THREE.BoxGeometry(stickWidth, boxHeight - 0.5, stickWidth);
-            const stickMaterial = new THREE.MeshLambertMaterial({ color: colors.elevator });
-            const stick = new THREE.Mesh(stickGeometry, stickMaterial);
+            const stick = new THREE.Mesh(stickGeometry, baseMaterial);
             stick.position.y = boxHeight / 2;
             stick.castShadow = true;
             group.add(stick);
-            
-            // Add wireframe edges to stick
-            const stickEdges = new THREE.EdgesGeometry(stickGeometry);
-            const stickEdgeMaterial = new THREE.LineBasicMaterial({ color: colors.stroke, linewidth: 2 });
-            const stickWireframe = new THREE.LineSegments(stickEdges, stickEdgeMaterial);
-            stickWireframe.position.y = boxHeight / 2;
-            group.add(stickWireframe);
-            
+
             // Top platform
-            const topGeometry = new THREE.BoxGeometry(1, 0.25, 1);
-            const topMaterial = new THREE.MeshLambertMaterial({ color: colors.elevator });
-            const top = new THREE.Mesh(topGeometry, topMaterial);
+            const top = new THREE.Mesh(baseGeometry, baseMaterial);
             top.position.y = boxHeight - 0.125;
             top.castShadow = true;
-            top.receiveShadow = true;
             group.add(top);
-            
-            // Add wireframe edges to top
-            const topEdges = new THREE.EdgesGeometry(topGeometry);
-            const topEdgeMaterial = new THREE.LineBasicMaterial({ color: colors.stroke, linewidth: 2 });
-            const topWireframe = new THREE.LineSegments(topEdges, topEdgeMaterial);
-            topWireframe.position.y = boxHeight - 0.125;
-            group.add(topWireframe);
-        }
-        
-        function loadLevel() {
-            // Reset level data to original state
-            levelData = null;
-            
-            // Clear existing boxes
-            boxes.forEach(box => scene.remove(box));
-            boxes = [];
-            
-            const freshLevelData = getLevelData();
-            
-            // Set bot starting position and direction
-            bot.position.x = freshLevelData.start.x;
-            bot.position.y = freshLevelData.start.y;
-            bot.direction = freshLevelData.start.d;
-            bot.startPosition = { ...bot.position };
-            bot.startDirection = bot.direction;
-            
-            // Create boxes for the level
-            for (let x = 0; x < freshLevelData.map.length; x++) {
-                for (let y = 0; y < freshLevelData.map[x].length; y++) {
-                    const tile = freshLevelData.map[x][y];
-                    const mapX = x - freshLevelData.map.length/2;
-                    const mapY = y - freshLevelData.map[0].length/2;
-                    const box = createBox(mapX, mapY, tile.h, tile.t);
-                    scene.add(box);
-                    boxes.push(box);
-                }
-            }
-            
-            // Update bot position
-            if (botMesh) {
-                updateBotPosition();
-            }
-        }
-        
-        function animate() {
-            requestAnimationFrame(animate);
-            
-            // Update controls
-            controls.update();
-            
+        },
+
+        createBot() {
+            const textureLoader = new THREE.TextureLoader();
+            textureLoader.load('img/sprites.png', (texture) => {
+                const spriteMaterial = new THREE.SpriteMaterial({
+                    map: texture,
+                    transparent: true
+                });
+
+                texture.repeat.set(1/8, 1/4);
+                texture.offset.set(0, 3/4);
+
+                this.botMesh = new THREE.Sprite(spriteMaterial);
+                this.botMesh.scale.set(1, 1, 1);
+                this.updateBotPosition();
+                this.scene.add(this.botMesh);
+            }, undefined, () => {
+                // Fallback to cube
+                const botGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+                const botMaterial = new THREE.MeshLambertMaterial({
+                    color: this.colors.bot,
+                    emissive: 0x331100
+                });
+                this.botMesh = new THREE.Mesh(botGeometry, botMaterial);
+                this.botMesh.castShadow = true;
+                this.updateBotPosition();
+                this.scene.add(this.botMesh);
+            });
+        },
+
+        updateBotPosition() {
+            if (!this.botMesh || !this.levelData) return;
+
+            const level = this.levelData;
+            const mapX = this.bot.position.x - level.map.length / 2;
+            const mapY = this.bot.position.y - level.map[0].length / 2;
+            const currentTile = level.map[this.bot.position.x][this.bot.position.y];
+            const height = currentTile.h * 0.5;
+
+            this.botMesh.position.set(mapX, height + 0.5, mapY);
+        },
+
+        animate() {
+            requestAnimationFrame(() => this.animate());
+
+            this.controls.update();
+
             // Animate light boxes (pulsing effect)
-            boxes.forEach(box => {
+            this.boxes.forEach(box => {
                 box.children.forEach(child => {
-                    if (child.material && child.material.color.getHex() === colors.lightBox.off) {
-                        // Simple pulsing animation for light boxes
+                    if (child.material && child.material.color.getHex() === this.colors.lightBox.off) {
                         const time = Date.now() * 0.001;
                         child.material.opacity = 0.7 + 0.3 * Math.sin(time * 2);
                     }
                 });
             });
-            
-            renderer.render(scene, camera);
-        }
-        
-        function resetCamera() {
-            camera.position.set(10, 8, 10);
-            controls.reset();
-        }
-        
-        function toggleWireframe() {
-            wireframeMode = !wireframeMode;
-            boxes.forEach(box => {
+
+            this.renderer.render(this.scene, this.camera);
+        },
+
+        onWindowResize() {
+            this.camera.aspect = window.innerWidth / window.innerHeight;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
+        },
+
+        resetCamera() {
+            this.camera.position.set(10, 8, 10);
+            this.controls.reset();
+        },
+
+        toggleWireframe() {
+            this.wireframeMode = !this.wireframeMode;
+            this.boxes.forEach(box => {
                 box.children.forEach(child => {
                     if (child.material) {
-                        child.material.wireframe = wireframeMode;
+                        child.material.wireframe = this.wireframeMode;
                     }
                 });
             });
-        }
-        
-        function createBot() {
-            console.log('Creating bot...');
-            
-            // Create bot using sprite texture
-            const textureLoader = new THREE.TextureLoader();
-            textureLoader.load('img/sprites.png', (texture) => {
-                console.log('Bot sprite loaded successfully');
-                // Create sprite material with bot texture
-                const spriteMaterial = new THREE.SpriteMaterial({ 
-                    map: texture,
-                    transparent: true
-                });
-                
-                // Set texture offset to show first bot sprite (top-left)
-                texture.repeat.set(1/8, 1/4); // 8 columns, 4 rows in sprite sheet
-                texture.offset.set(0, 3/4); // Start from top-left sprite
-                
-                botMesh = new THREE.Sprite(spriteMaterial);
-                botMesh.scale.set(1, 1, 1);
-                
-                // Position bot at starting position
-                updateBotPosition();
-                scene.add(botMesh);
-                console.log('Bot sprite added to scene');
-            }, undefined, (error) => {
-                console.error('Error loading bot sprite:', error);
-                console.log('Using fallback cube bot');
-                // Fallback to cube if sprite fails to load
-                const botGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-                const botMaterial = new THREE.MeshLambertMaterial({ 
-                    color: colors.bot,
-                    emissive: 0x331100
-                });
-                botMesh = new THREE.Mesh(botGeometry, botMaterial);
-                botMesh.castShadow = true;
-                updateBotPosition();
-                scene.add(botMesh);
-                console.log('Bot cube added to scene');
+        },
+
+        // ========================================================================
+        // PROGRAM EDITOR
+        // ========================================================================
+
+        focusProgram(programName) {
+            this.focusedProgram = programName;
+
+            document.querySelectorAll('.program-area').forEach(area => {
+                area.classList.remove('focused');
             });
-        }
-        
-        function updateBotPosition() {
-            if (!botMesh) {
-                console.log('No botMesh found in updateBotPosition');
-                return;
+
+            const areaMap = {
+                main: 'main-program',
+                proc1: 'proc1-program',
+                proc2: 'proc2-program'
+            };
+
+            document.getElementById(areaMap[programName]).classList.add('focused');
+        },
+
+        addInstruction(instructionType) {
+            if (this.isExecuting) return;
+
+            const program = this.programs[this.focusedProgram];
+            program.push(instructionType);
+            this.updateProgramDisplay();
+        },
+
+        removeInstruction(programName, index) {
+            if (this.isExecuting) return;
+
+            this.programs[programName].splice(index, 1);
+            this.updateProgramDisplay();
+        },
+
+        clearPrograms() {
+            if (this.isExecuting) return;
+
+            this.programs.main = [];
+            this.programs.proc1 = [];
+            this.programs.proc2 = [];
+            this.updateProgramDisplay();
+        },
+
+        updateProgramDisplay() {
+            const listMap = {
+                main: 'main-list',
+                proc1: 'proc1-list',
+                proc2: 'proc2-list'
+            };
+
+            ['main', 'proc1', 'proc2'].forEach(programName => {
+                const list = document.getElementById(listMap[programName]);
+                list.innerHTML = '';
+
+                this.programs[programName].forEach((inst, index) => {
+                    const item = document.createElement('li');
+                    item.className = 'instruction-item';
+                    item.textContent = this.instructionDefs[inst].display;
+                    item.onclick = () => this.removeInstruction(programName, index);
+                    list.appendChild(item);
+                });
+            });
+        },
+
+        // ========================================================================
+        // EXECUTION ENGINE
+        // ========================================================================
+
+        async runProgram(fast = false) {
+            if (this.isExecuting) return;
+
+            this.isExecuting = true;
+            this.executionSpeed = fast ? 50 : 500;
+
+            document.getElementById('execution-status').classList.add('active');
+            document.getElementById('run-button').style.display = 'none';
+            document.getElementById('fast-button').style.display = 'none';
+            document.getElementById('stop-button').style.display = 'block';
+
+            // Reset level state
+            this.resetLevel();
+
+            // Build execution queue
+            const executionQueue = [...this.programs.main];
+
+            try {
+                await this.executeQueue(executionQueue);
+
+                // Check if level is complete
+                if (this.checkLevelComplete()) {
+                    this.showLevelComplete();
+                }
+            } catch (error) {
+                console.error('Execution error:', error);
             }
-            
-            // Get current level data
-            const levelData = getLevelData();
-            
-            // Fix coordinate mapping - don't center the map
-            const mapX = bot.position.x - levelData.map.length/2;
-            const mapY = bot.position.y - levelData.map[0].length/2;
-            const currentTile = levelData.map[bot.position.x][bot.position.y];
-            const height = currentTile.h * 0.5; // Apply height scale
-            const newY = height + 0.5;
-            
-            console.log('updateBotPosition - Bot pos:', bot.position, 'Tile height:', currentTile.h, 'Calculated Y:', newY);
-            console.log('updateBotPosition - Before:', botMesh.position.y, 'After:', newY);
-            
-            botMesh.position.set(mapX, newY, mapY);
-            
-            // Update sprite based on direction and animation
-            updateBotSprite();
-        }
-        
-        function updateBotSprite() {
-            if (!botMesh || !botMesh.material || !botMesh.material.map) return;
-            
-            // Get animation data
-            const anim = botAnimations[currentAnimation];
-            if (!anim) return;
-            
-            // Calculate sprite position in sheet
-            // Sprite sheet is 8 columns x 4 rows
-            // Each sprite is 80x100 pixels, sheet is 640x400
-            const spriteWidth = 80;
-            const sheetWidth = 640;
-            
-            // Direction offsets (4 rows for 4 directions)
-            const directionRow = bot.direction; // 0=SE, 1=NE, 2=NW, 3=SW
-            
-            // Animation frame offset
-            const frameOffset = Math.floor(Date.now() / 200) % anim.frames; // Animate frames
-            
-            // Calculate UV coordinates
-            const u = (anim.sX + frameOffset * spriteWidth) / sheetWidth;
-            const v = (3 - directionRow) / 4; // Flip Y coordinate for Three.js
-            
-            botMesh.material.map.offset.set(u, v);
-            console.log(`Bot sprite: animation=${currentAnimation}, direction=${bot.direction}, frame=${frameOffset}, UV=(${u}, ${v})`);
-        }
-        
-        function addInstruction(instructionType) {
-            if (!isExecuting) {
-                currentInstructions.push(instructionType);
-                updateInstructionDisplay();
+
+            this.stopExecution();
+        },
+
+        async executeQueue(queue, depth = 0) {
+            if (depth > 100) {
+                throw new Error('Maximum recursion depth exceeded');
             }
-        }
-        
-        function clearInstructions() {
-            if (!isExecuting) {
-                currentInstructions = [];
-                updateInstructionDisplay();
+
+            for (let i = 0; i < queue.length && this.isExecuting; i++) {
+                const instruction = queue[i];
+
+                switch (instruction) {
+                    case 'walk':
+                        this.botWalk();
+                        break;
+                    case 'jump':
+                        this.botJump();
+                        break;
+                    case 'light':
+                        this.botLight();
+                        break;
+                    case 'turnLeft':
+                        this.botTurnLeft();
+                        break;
+                    case 'turnRight':
+                        this.botTurnRight();
+                        break;
+                    case 'proc1':
+                        await this.executeQueue([...this.programs.proc1], depth + 1);
+                        break;
+                    case 'proc2':
+                        await this.executeQueue([...this.programs.proc2], depth + 1);
+                        break;
+                }
+
+                this.updateBotPosition();
+                await this.delay(this.executionSpeed);
             }
-        }
-        
-        function updateInstructionDisplay() {
-            const ui = document.getElementById('ui');
-            const existing = document.getElementById('instructionList');
-            if (existing) existing.remove();
-            
-            const instructionDiv = document.createElement('div');
-            instructionDiv.id = 'instructionList';
-            instructionDiv.innerHTML = '<h3>Instructions:</h3><p>' + 
-                currentInstructions.map(i => instructions[i].display).join(' → ') + '</p>';
-            ui.appendChild(instructionDiv);
-        }
-        
-        function executeInstructions() {
-            if (isExecuting || currentInstructions.length === 0) return;
-            
-            isExecuting = true;
-            executionQueue = [...currentInstructions];
-            executeNextInstruction();
-        }
-        
-        function executeNextInstruction() {
-            if (executionQueue.length === 0) {
-                isExecuting = false;
-                return;
+        },
+
+        stopExecution() {
+            this.isExecuting = false;
+            document.getElementById('execution-status').classList.remove('active');
+            document.getElementById('run-button').style.display = 'inline-block';
+            document.getElementById('fast-button').style.display = 'inline-block';
+            document.getElementById('stop-button').style.display = 'none';
+        },
+
+        delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        },
+
+        resetLevel() {
+            // Reset bot
+            this.bot.position = { ...this.bot.startPosition };
+            this.bot.direction = this.bot.startDirection;
+
+            // Reset level data
+            const originalLevel = this.levels[this.currentLevel];
+            this.levelData = JSON.parse(JSON.stringify(originalLevel));
+
+            // Rebuild boxes
+            this.boxes.forEach(box => this.scene.remove(box));
+            this.boxes = [];
+
+            for (let x = 0; x < this.levelData.map.length; x++) {
+                for (let y = 0; y < this.levelData.map[x].length; y++) {
+                    const tile = this.levelData.map[x][y];
+                    const mapX = x - this.levelData.map.length / 2;
+                    const mapY = y - this.levelData.map[0].length / 2;
+                    const box = this.createBox(mapX, mapY, tile.h, tile.t);
+                    this.scene.add(box);
+                    this.boxes.push(box);
+                }
             }
-            
-            const instruction = executionQueue.shift();
-            
-            switch (instruction) {
-                case 'walk':
-                    botWalk();
-                    break;
-                case 'jump':
-                    botJump();
-                    break;
-                case 'light':
-                    botLight();
-                    break;
-                case 'turnLeft':
-                    botTurnLeft();
-                    break;
-                case 'turnRight':
-                    botTurnRight();
-                    break;
-            }
-            
-            updateBotPosition();
-            
-            // Continue execution after delay
-            setTimeout(() => executeNextInstruction(), 500);
-        }
-        
-        function botWalk() {
-            // Set walk animation
-            currentAnimation = 'walk';
-            updateBotSprite();
-            
-            const levelData = getLevelData();
+
+            this.updateBotPosition();
+        },
+
+        // ========================================================================
+        // BOT ACTIONS
+        // ========================================================================
+
+        botWalk() {
             const directions = [
                 { x: 0, y: -1 }, // SE
                 { x: 1, y: 0 },  // NE
                 { x: 0, y: 1 },  // NW
                 { x: -1, y: 0 }  // SW
             ];
-            
-            const dir = directions[bot.direction];
-            const newX = bot.position.x + dir.x;
-            const newY = bot.position.y + dir.y;
-            
-            // Check bounds and height
-            if (newX >= 0 && newX < levelData.map.length && 
-                newY >= 0 && newY < levelData.map[0].length) {
-                const currentHeight = levelData.map[bot.position.x][bot.position.y].h;
-                const targetHeight = levelData.map[newX][newY].h;
-                
+
+            const dir = directions[this.bot.direction];
+            const newX = this.bot.position.x + dir.x;
+            const newY = this.bot.position.y + dir.y;
+
+            if (newX >= 0 && newX < this.levelData.map.length &&
+                newY >= 0 && newY < this.levelData.map[0].length) {
+                const currentHeight = this.levelData.map[this.bot.position.x][this.bot.position.y].h;
+                const targetHeight = this.levelData.map[newX][newY].h;
+
                 if (currentHeight === targetHeight) {
-                    bot.position.x = newX;
-                    bot.position.y = newY;
+                    this.bot.position.x = newX;
+                    this.bot.position.y = newY;
                 }
             }
-            
-            // Return to stand animation after a delay
-            setTimeout(() => {
-                currentAnimation = 'stand';
-                updateBotSprite();
-            }, 500);
-        }
-        
-        function botJump() {
-            const levelData = getLevelData();
+        },
+
+        botJump() {
             const directions = [
                 { x: 0, y: -1 }, // SE
                 { x: 1, y: 0 },  // NE
                 { x: 0, y: 1 },  // NW
                 { x: -1, y: 0 }  // SW
             ];
-            
-            const dir = directions[bot.direction];
-            const newX = bot.position.x + dir.x;
-            const newY = bot.position.y + dir.y;
-            
-            // Check bounds
-            if (newX >= 0 && newX < levelData.map.length && 
-                newY >= 0 && newY < levelData.map[0].length) {
-                const currentHeight = levelData.map[bot.position.x][bot.position.y].h;
-                const targetHeight = levelData.map[newX][newY].h;
-                
-                // Set appropriate jump animation
-                if (targetHeight > currentHeight) {
-                    currentAnimation = 'jumpUp';
-                } else {
-                    currentAnimation = 'jumpDown';
-                }
-                updateBotSprite();
-                
+
+            const dir = directions[this.bot.direction];
+            const newX = this.bot.position.x + dir.x;
+            const newY = this.bot.position.y + dir.y;
+
+            if (newX >= 0 && newX < this.levelData.map.length &&
+                newY >= 0 && newY < this.levelData.map[0].length) {
+                const currentHeight = this.levelData.map[this.bot.position.x][this.bot.position.y].h;
+                const targetHeight = this.levelData.map[newX][newY].h;
+
                 // Can jump up 1 level or down any amount
                 if (targetHeight - currentHeight === 1 || currentHeight > targetHeight) {
-                    bot.position.x = newX;
-                    bot.position.y = newY;
+                    this.bot.position.x = newX;
+                    this.bot.position.y = newY;
                 }
             }
-            
-            // Return to stand animation after jump
-            setTimeout(() => {
-                currentAnimation = 'stand';
-                updateBotSprite();
-            }, 500);
-        }
-        
-        function botLight() {
-            // Set light animation
-            currentAnimation = 'light';
-            updateBotSprite();
-            
-            const levelData = getLevelData();
-            const currentTile = levelData.map[bot.position.x][bot.position.y];
+        },
+
+        botLight() {
+            const currentTile = this.levelData.map[this.bot.position.x][this.bot.position.y];
+
             if (currentTile.t === 'l') {
                 // Toggle light box
-                const boxIndex = bot.position.x * levelData.map[0].length + bot.position.y;
-                const box = boxes[boxIndex];
+                currentTile.lit = !currentTile.lit;
+                const boxIndex = this.bot.position.x * this.levelData.map[0].length + this.bot.position.y;
+                const box = this.boxes[boxIndex];
+
                 if (box) {
                     box.children.forEach(child => {
                         if (child.material && child.material.color) {
-                            const isOn = child.material.color.getHex() === colors.lightBox.on;
-                            child.material.color.setHex(isOn ? colors.lightBox.off : colors.lightBox.on);
+                            const isOn = child.material.color.getHex() === this.colors.lightBox.on;
+                            child.material.color.setHex(isOn ? this.colors.lightBox.off : this.colors.lightBox.on);
                         }
                     });
                 }
             } else if (currentTile.t === 'e') {
-                // Elevator logic - increase height by 2 mod 6
-                const boxIndex = bot.position.x * levelData.map[0].length + bot.position.y;
-                const box = boxes[boxIndex];
-                console.log('Elevator activation - Bot at:', bot.position, 'Box index:', boxIndex, 'Box found:', !!box);
-                
+                // Elevator logic
+                const boxIndex = this.bot.position.x * this.levelData.map[0].length + this.bot.position.y;
+                const box = this.boxes[boxIndex];
+
                 if (box) {
-                    // Get current elevator height from the level data
                     const currentHeight = currentTile.h;
-                    // Calculate new height: increase by 2, mod 6 (cycle through 1,3,5,1,3,5...)
                     const newHeight = ((currentHeight + 2 - 1) % 6) + 1;
-                    
-                    console.log(`Elevator height change: ${currentHeight} → ${newHeight}`);
-                    
-                    // Update the tile data
                     currentTile.h = newHeight;
-                    
-                    // Remove old elevator box
-                    scene.remove(box);
-                    const boxIndexInArray = boxes.indexOf(box);
-                    if (boxIndexInArray > -1) {
-                        boxes.splice(boxIndexInArray, 1);
-                    }
-                    
-                    // Create new elevator box with updated height
-                    const newBox = createBox(bot.position.x - levelData.map.length/2, bot.position.y - levelData.map[0].length/2, newHeight, 'e');
-                    scene.add(newBox);
-                    boxes.splice(boxIndexInArray, 0, newBox);
-                    
-                    // Update bot position to match new elevator height with a small delay
-                    setTimeout(() => {
-                        console.log('Updating bot position after elevator change...');
-                        updateBotPosition();
-                    }, 50);
-                    
-                    console.log(`Elevator activated: height ${currentHeight} → ${newHeight}`);
-                } else {
-                    console.log('No elevator box found at position:', bot.position);
+
+                    // Rebuild elevator box
+                    this.scene.remove(box);
+                    const mapX = this.bot.position.x - this.levelData.map.length / 2;
+                    const mapY = this.bot.position.y - this.levelData.map[0].length / 2;
+                    const newBox = this.createBox(mapX, mapY, newHeight, 'e');
+                    this.scene.add(newBox);
+                    this.boxes[boxIndex] = newBox;
                 }
             }
-            
-            // Return to stand animation after light action
-            setTimeout(() => {
-                currentAnimation = 'stand';
-                updateBotSprite();
-            }, 500);
+        },
+
+        botTurnLeft() {
+            this.bot.direction = (this.bot.direction + 1) % 4;
+        },
+
+        botTurnRight() {
+            this.bot.direction = (this.bot.direction - 1 + 4) % 4;
+        },
+
+        // ========================================================================
+        // LEVEL COMPLETION
+        // ========================================================================
+
+        checkLevelComplete() {
+            for (let x = 0; x < this.levelData.map.length; x++) {
+                for (let y = 0; y < this.levelData.map[x].length; y++) {
+                    const tile = this.levelData.map[x][y];
+                    if (tile.t === 'l' && !tile.lit) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        },
+
+        showLevelComplete() {
+            const instructionCount = this.programs.main.length +
+                                     this.programs.proc1.length +
+                                     this.programs.proc2.length;
+
+            const medals = this.levels[this.currentLevel].medals;
+            let medal = 'none';
+            let medalDisplay = '✅';
+
+            if (instructionCount <= medals.gold) {
+                medal = 'gold';
+                medalDisplay = '🥇 Gold Medal!';
+            } else if (instructionCount <= medals.silver) {
+                medal = 'silver';
+                medalDisplay = '🥈 Silver Medal!';
+            } else if (instructionCount <= medals.bronze) {
+                medal = 'bronze';
+                medalDisplay = '🥉 Bronze Medal!';
+            } else {
+                medalDisplay = '✅ Level Complete!';
+            }
+
+            // Save medal
+            const medalValue = { gold: 4, silver: 3, bronze: 2, none: 1 }[medal];
+            const savedMedal = localStorage.getItem(`lightbot_level_${this.currentLevel}`);
+            if (!savedMedal || parseInt(savedMedal) < medalValue) {
+                localStorage.setItem(`lightbot_level_${this.currentLevel}`, medalValue.toString());
+            }
+
+            // Show dialog
+            document.getElementById('medal-display').textContent = medalDisplay;
+            document.getElementById('complete-message').innerHTML =
+                `You used ${instructionCount} instructions.<br>` +
+                `Target: 🥇${medals.gold} 🥈${medals.silver} 🥉${medals.bronze}`;
+            document.getElementById('dialog-overlay').classList.add('active');
+            document.getElementById('complete-dialog').classList.add('active');
+
+            this.loadLevelList();
+        },
+
+        closeDialog() {
+            document.getElementById('dialog-overlay').classList.remove('active');
+            document.getElementById('complete-dialog').classList.remove('active');
+        },
+
+        nextLevel() {
+            this.closeDialog();
+            if (this.currentLevel < this.levels.length - 1) {
+                this.loadLevel(this.currentLevel + 1);
+            } else {
+                this.showScreen('level-select');
+            }
+        },
+
+        // ========================================================================
+        // UI SCREENS
+        // ========================================================================
+
+        showScreen(screenName) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+
+            const screenMap = {
+                'welcome': 'welcome-screen',
+                'help': 'help-screen',
+                'level-select': 'level-select-screen',
+                'game': 'game-screen'
+            };
+
+            document.getElementById(screenMap[screenName]).classList.add('active');
         }
-        
-        function botTurnLeft() {
-            bot.direction = (bot.direction + 1) % 4;
-            // Update sprite to show new direction immediately
-            updateBotSprite();
-        }
-        
-        function botTurnRight() {
-            bot.direction = (bot.direction - 1 + 4) % 4;
-            // Update sprite to show new direction immediately
-            updateBotSprite();
-        }
-        
-        
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-        
-        // Initialize when page loads
-        window.addEventListener('load', init);
+    };
+
+    // Initialize game when page loads
+    window.addEventListener('load', () => game.init());
     </script>
 </body>
 </html>

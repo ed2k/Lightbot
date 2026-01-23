@@ -413,6 +413,7 @@
         controls: null,
         boxes: [],
         botMesh: null,
+        tileHighlight: null,
 
         // Game state
         currentLevel: 0,
@@ -538,8 +539,27 @@
             directionalLight.castShadow = true;
             this.scene.add(directionalLight);
 
+            // Create tile highlight indicator
+            this.createTileHighlight();
+
             // Handle window resize
             window.addEventListener('resize', () => this.onWindowResize());
+        },
+
+        createTileHighlight() {
+            // Create a ring/outline to highlight the current tile
+            const ringGeometry = new THREE.RingGeometry(0.45, 0.55, 32);
+            const ringMaterial = new THREE.MeshBasicMaterial({
+                color: 0x00ff00,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            this.tileHighlight = new THREE.Mesh(ringGeometry, ringMaterial);
+            this.tileHighlight.rotation.x = -Math.PI / 2; // Lay flat on ground
+            this.tileHighlight.renderOrder = 998; // Render before bot
+            this.scene.add(this.tileHighlight);
         },
 
         initUI() {
@@ -608,6 +628,11 @@
                 this.createBot();
             } else {
                 this.updateBotPosition();
+            }
+
+            // Show tile highlight
+            if (this.tileHighlight) {
+                this.tileHighlight.visible = true;
             }
 
             // Clear programs
@@ -830,11 +855,14 @@
             if (this.botTexture) {
                 // Sprite bot - elevated position for visibility
                 this.botMesh.position.set(mapX, height + 1.25, mapY);
-                console.log('Bot sprite positioned at:', this.botMesh.position);
             } else {
                 // Mesh bot - standard position
                 this.botMesh.position.set(mapX, height + 0.8, mapY);
-                console.log('Bot mesh positioned at:', this.botMesh.position);
+            }
+
+            // Update tile highlight position
+            if (this.tileHighlight) {
+                this.tileHighlight.position.set(mapX, height + 0.01, mapY);
             }
 
             // Update sprite animation if using sprite texture
@@ -901,6 +929,17 @@
 
             // Update bot sprite animation
             this.updateBotSprite();
+
+            // Animate tile highlight (pulsing effect)
+            if (this.tileHighlight) {
+                const time = Date.now() * 0.001;
+                this.tileHighlight.material.opacity = 0.5 + 0.3 * Math.sin(time * 3);
+                this.tileHighlight.scale.set(
+                    1 + 0.1 * Math.sin(time * 3),
+                    1 + 0.1 * Math.sin(time * 3),
+                    1
+                );
+            }
 
             // Animate light boxes (pulsing effect)
             this.boxes.forEach(box => {
@@ -1374,6 +1413,11 @@
             };
 
             document.getElementById(screenMap[screenName]).classList.add('active');
+
+            // Hide tile highlight when not in game mode
+            if (this.tileHighlight) {
+                this.tileHighlight.visible = (screenName === 'game');
+            }
         }
     };
 

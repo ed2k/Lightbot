@@ -125,6 +125,8 @@
 
         .program-area.focused {
             border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
         }
 
         .program-area h4 {
@@ -132,6 +134,17 @@
             font-size: 12px;
             margin-bottom: 5px;
             cursor: pointer;
+            user-select: none;
+        }
+
+        .program-area h4:hover {
+            color: #66BB6A;
+            text-decoration: underline;
+        }
+
+        .program-area.focused h4 {
+            font-weight: bold;
+            color: #66BB6A;
         }
 
         .instruction-list {
@@ -563,10 +576,8 @@
         },
 
         initUI() {
-            // Set up program area click handlers
-            document.getElementById('main-program').querySelector('h4').addEventListener('click', () => this.focusProgram('main'));
-            document.getElementById('proc1-program').querySelector('h4').addEventListener('click', () => this.focusProgram('proc1'));
-            document.getElementById('proc2-program').querySelector('h4').addEventListener('click', () => this.focusProgram('proc2'));
+            // UI initialization (onclick handlers are already in HTML)
+            console.log('UI initialized - program areas ready');
         },
 
         // ========================================================================
@@ -981,6 +992,7 @@
         // ========================================================================
 
         focusProgram(programName) {
+            console.log(`Focusing program: ${programName}`);
             this.focusedProgram = programName;
 
             document.querySelectorAll('.program-area').forEach(area => {
@@ -993,12 +1005,19 @@
                 proc2: 'proc2-program'
             };
 
-            document.getElementById(areaMap[programName]).classList.add('focused');
+            const targetElement = document.getElementById(areaMap[programName]);
+            if (targetElement) {
+                targetElement.classList.add('focused');
+                console.log(`✓ Focused program area: ${programName}`);
+            } else {
+                console.error(`✗ Could not find program area: ${areaMap[programName]}`);
+            }
         },
 
         addInstruction(instructionType) {
             if (this.isExecuting) return;
 
+            console.log(`Adding ${instructionType} to ${this.focusedProgram}`);
             const program = this.programs[this.focusedProgram];
             program.push(instructionType);
             this.updateProgramDisplay();

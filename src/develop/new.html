@@ -862,10 +862,12 @@
             const sheetWidth = 640;   // Total sheet width in pixels
             const sheetHeight = 400;  // Total sheet height in pixels
 
-            // Direction row - adjust by rotating left 90 degrees (+1 direction)
-            // Game directions: 0=SE, 1=NE, 2=NW, 3=SW
-            // Sprite rows: 0=NE, 1=NW, 2=SW, 3=SE (rotated left from game)
-            const directionRow = (this.bot.direction + 1) % 4;
+            // Direction mapping - match sprite rows to game directions
+            // Game dirs: 0=SE, 1=NE, 2=NW, 3=SW
+            // Sprite rows: 0=NE, 1=SE, 2=SW, 3=NW (empirically determined)
+            // Mapping: SE->1, NE->0, NW->3, SW->2
+            const directionMap = [1, 0, 3, 2];
+            const directionRow = directionMap[this.bot.direction];
 
             // Calculate current frame for animated sprites
             let currentFrame = 0;
@@ -886,8 +888,10 @@
             // Set the texture offset
             this.botTexture.offset.set(u, v);
 
-            // Debug logging (comment out in production)
-            // console.log(`Bot: ${this.bot.currentAnimation}, dir=${this.bot.direction}, spriteRow=${directionRow}, frame=${currentFrame}, u=${u}, v=${v}`);
+            // Debug logging - shows current direction and sprite row
+            if (this.bot.currentAnimation !== 'stand' || Date.now() % 1000 < 100) {
+                console.log(`Bot: anim=${this.bot.currentAnimation}, gameDir=${this.bot.direction}, spriteRow=${directionRow}`);
+            }
         },
 
         animate() {
@@ -1130,6 +1134,7 @@
             // Set walk animation
             this.bot.currentAnimation = 'walk';
 
+            // Original direction vectors (correct for movement)
             const directions = [
                 { x: 0, y: -1 }, // SE
                 { x: 1, y: 0 },  // NE
@@ -1161,6 +1166,7 @@
         },
 
         botJump() {
+            // Original direction vectors (correct for movement)
             const directions = [
                 { x: 0, y: -1 }, // SE
                 { x: 1, y: 0 },  // NE
@@ -1250,7 +1256,8 @@
         },
 
         botTurnLeft() {
-            this.bot.direction = (this.bot.direction + 1) % 4;
+            // Turn left = decrease direction (counter-clockwise in isometric view)
+            this.bot.direction = (this.bot.direction - 1 + 4) % 4;
 
             // Update bot rotation for fallback mesh
             if (!this.botTexture && this.botMesh) {
@@ -1265,7 +1272,8 @@
         },
 
         botTurnRight() {
-            this.bot.direction = (this.bot.direction - 1 + 4) % 4;
+            // Turn right = increase direction (clockwise in isometric view)
+            this.bot.direction = (this.bot.direction + 1) % 4;
 
             // Update bot rotation for fallback mesh
             if (!this.botTexture && this.botMesh) {

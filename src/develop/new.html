@@ -325,6 +325,80 @@
             height: calc(100vh - 60px) !important;
         }
 
+        /* Map Editor Styles */
+        #map-grid {
+            display: inline-block;
+            border: 2px solid #4CAF50;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        .map-row {
+            display: flex;
+            gap: 2px;
+        }
+
+        .map-cell {
+            width: 40px;
+            height: 40px;
+            border: 1px solid #666;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .map-cell:hover {
+            border-color: #4CAF50;
+            transform: scale(1.1);
+            z-index: 10;
+        }
+
+        .map-cell.selected {
+            border: 3px solid #FFD700;
+            box-shadow: 0 0 10px #FFD700;
+        }
+
+        .map-cell.bot-position {
+            border: 3px solid #00FF00;
+            box-shadow: 0 0 10px #00FF00;
+        }
+
+        .map-cell .height {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .map-cell .type {
+            font-size: 8px;
+        }
+
+        .height-btn, .type-btn {
+            padding: 8px 12px;
+            min-width: 50px;
+            font-size: 13px;
+        }
+
+        .height-btn.active {
+            background: #FFD700 !important;
+            color: #000;
+            font-weight: bold;
+        }
+
+        .type-btn {
+            flex: 1;
+        }
+
+        .type-btn.active {
+            border: 3px solid #FFD700;
+            box-shadow: 0 0 10px #FFD700;
+        }
+
         /* Mobile Responsive Layout */
         @media (max-width: 768px) {
             body {
@@ -441,6 +515,24 @@
                 height: 300px;
             }
 
+            /* Map editor mobile adjustments */
+            .map-cell {
+                width: 35px;
+                height: 35px;
+                font-size: 12px;
+            }
+
+            #map-grid {
+                overflow-x: auto;
+                max-width: 100%;
+            }
+
+            .height-btn, .type-btn {
+                padding: 6px 8px;
+                min-width: 40px;
+                font-size: 11px;
+            }
+
             #instructions-palette {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -475,7 +567,49 @@
         </div>
 
         <div id="ui-panel">
-            <button id="toggle-ui-mobile" style="display: none;">▼ Show/Hide Controls</button>
+            <div style="display: flex; gap: 5px;">
+                <button id="toggle-ui-mobile" style="display: none; flex: 1;">▼ Show/Hide Controls</button>
+                <button id="toggle-map-editor" style="display: none; flex: 1; background: #FF9800;">🗺️ Map Editor</button>
+            </div>
+
+            <!-- Map Editor -->
+            <div id="map-editor-screen" class="screen" style="display: none;">
+                <h2>Map Editor</h2>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <button onclick="game.closeMapEditor()" style="flex: 1; background: #4CAF50;">✓ Done Editing</button>
+                    <button onclick="game.resetMapToOriginal()" style="flex: 1; background: #F44336;">↺ Reset Map</button>
+                </div>
+
+                <div id="map-grid" style="margin: 15px 0; overflow: auto;"></div>
+
+                <div id="block-editor" style="display: none; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; margin-top: 10px;">
+                    <h3>Editing Block (<span id="edit-coords"></span>)</h3>
+
+                    <div style="margin: 10px 0;">
+                        <label style="display: block; margin-bottom: 5px;">Height:</label>
+                        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                            <button onclick="game.setBlockHeight(0)" class="height-btn">0</button>
+                            <button onclick="game.setBlockHeight(1)" class="height-btn">1</button>
+                            <button onclick="game.setBlockHeight(2)" class="height-btn">2</button>
+                            <button onclick="game.setBlockHeight(3)" class="height-btn">3</button>
+                            <button onclick="game.setBlockHeight(4)" class="height-btn">4</button>
+                            <button onclick="game.setBlockHeight(5)" class="height-btn">5</button>
+                            <button onclick="game.setBlockHeight(6)" class="height-btn">6</button>
+                        </div>
+                    </div>
+
+                    <div style="margin: 10px 0;">
+                        <label style="display: block; margin-bottom: 5px;">Type:</label>
+                        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                            <button onclick="game.setBlockType('b')" class="type-btn" style="background: #999;">📦 Normal</button>
+                            <button onclick="game.setBlockType('l')" class="type-btn" style="background: #0468fb;">💡 Light</button>
+                            <button onclick="game.setBlockType('e')" class="type-btn" style="background: #dc84bf;">🎚️ Elevator</button>
+                        </div>
+                    </div>
+
+                    <button onclick="game.clearBlockSelection()" style="width: 100%; margin-top: 10px; background: #666;">Clear Selection</button>
+                </div>
+            </div>
 
             <!-- Welcome Screen -->
             <div id="welcome-screen" class="screen active">
@@ -605,6 +739,9 @@
         isExecuting: false,
         executionSpeed: 500, // ms between instructions
         wireframeMode: false,
+        mapEditorMode: false,
+        selectedBlock: null,
+        originalLevelData: null,
 
         // Bot state
         bot: {
@@ -1638,11 +1775,279 @@
             if (this.tileHighlight) {
                 this.tileHighlight.visible = (screenName === 'game');
             }
+
+            // Show map editor button only in game mode
+            const mapEditorBtn = document.getElementById('toggle-map-editor');
+            if (mapEditorBtn) {
+                mapEditorBtn.style.display = (screenName === 'game') ? 'block' : 'none';
+            }
+        },
+
+        // ========================================================================
+        // MAP EDITOR
+        // ========================================================================
+
+        toggleMapEditor() {
+            this.mapEditorMode = !this.mapEditorMode;
+
+            const editorScreen = document.getElementById('map-editor-screen');
+            const gameScreen = document.getElementById('game-screen');
+            const toggleBtn = document.getElementById('toggle-map-editor');
+
+            if (this.mapEditorMode) {
+                // Save original level data for reset
+                this.originalLevelData = JSON.parse(JSON.stringify(this.levelData));
+
+                // Show map editor, hide game screen
+                editorScreen.style.display = 'block';
+                gameScreen.style.display = 'none';
+                toggleBtn.textContent = '🎮 Back to Game';
+                toggleBtn.style.background = '#4CAF50';
+
+                // Render the map grid
+                this.renderMapGrid();
+            } else {
+                // Hide map editor, show game screen
+                editorScreen.style.display = 'none';
+                gameScreen.style.display = 'block';
+                toggleBtn.textContent = '🗺️ Map Editor';
+                toggleBtn.style.background = '#FF9800';
+
+                // Clear selection
+                this.clearBlockSelection();
+            }
+        },
+
+        renderMapGrid() {
+            const gridContainer = document.getElementById('map-grid');
+            gridContainer.innerHTML = '';
+
+            if (!this.levelData || !this.levelData.map) {
+                gridContainer.innerHTML = '<p>No map data available</p>';
+                return;
+            }
+
+            const map = this.levelData.map;
+            const rows = map.length;
+            const cols = map[0] ? map[0].length : 0;
+
+            // Create grid wrapper
+            const gridWrapper = document.createElement('div');
+            gridWrapper.style.display = 'inline-grid';
+            gridWrapper.style.gridTemplateColumns = `repeat(${cols}, 40px)`;
+            gridWrapper.style.gap = '2px';
+            gridWrapper.style.background = '#333';
+            gridWrapper.style.padding = '10px';
+            gridWrapper.style.borderRadius = '5px';
+
+            // Create cells
+            for (let x = 0; x < rows; x++) {
+                for (let y = 0; y < cols; y++) {
+                    const block = map[x][y];
+                    const cell = document.createElement('div');
+                    cell.className = 'map-cell';
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+
+                    // Show height as background darkness (higher = lighter)
+                    const brightness = 50 + (block.h * 30);
+                    cell.style.background = `rgb(${brightness}, ${brightness}, ${brightness})`;
+
+                    // Show type icon
+                    let icon = '';
+                    if (block.t === 'l') icon = '💡';
+                    else if (block.t === 'e') icon = '🎚️';
+                    else icon = block.h; // Show height number
+
+                    cell.innerHTML = `<div style="font-size: 14px; font-weight: bold;">${icon}</div>`;
+
+                    // Highlight bot starting position
+                    if (x === this.levelData.position.x && y === this.levelData.position.y) {
+                        cell.classList.add('bot-position');
+                        cell.style.border = '3px solid #4CAF50';
+                    }
+
+                    // Click handler
+                    cell.addEventListener('click', () => this.selectBlock(x, y));
+
+                    gridWrapper.appendChild(cell);
+                }
+            }
+
+            gridContainer.appendChild(gridWrapper);
+        },
+
+        selectBlock(x, y) {
+            console.log(`Selected block: (${x}, ${y})`);
+
+            this.selectedBlock = { x, y };
+
+            // Update visual selection
+            document.querySelectorAll('.map-cell').forEach(cell => {
+                cell.classList.remove('selected');
+            });
+
+            const selectedCell = document.querySelector(`.map-cell[data-x="${x}"][data-y="${y}"]`);
+            if (selectedCell) {
+                selectedCell.classList.add('selected');
+            }
+
+            // Show block editor panel
+            const editor = document.getElementById('block-editor');
+            const coords = document.getElementById('edit-coords');
+            editor.style.display = 'block';
+            coords.textContent = `${x}, ${y}`;
+
+            // Highlight current values
+            const block = this.levelData.map[x][y];
+
+            // Highlight height button
+            document.querySelectorAll('#block-editor button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Find and highlight active height
+            const heightBtns = document.querySelectorAll('#block-editor button[onclick*="setBlockHeight"]');
+            heightBtns.forEach(btn => {
+                const height = parseInt(btn.getAttribute('onclick').match(/\d+/)[0]);
+                if (height === block.h) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Find and highlight active type
+            const typeBtns = document.querySelectorAll('#block-editor button[onclick*="setBlockType"]');
+            typeBtns.forEach(btn => {
+                const typeMatch = btn.getAttribute('onclick').match(/'([a-z])'/);
+                if (typeMatch && typeMatch[1] === block.t) {
+                    btn.classList.add('active');
+                }
+            });
+        },
+
+        setBlockHeight(height) {
+            if (!this.selectedBlock) {
+                console.log('No block selected');
+                return;
+            }
+
+            const { x, y } = this.selectedBlock;
+            console.log(`Setting block (${x}, ${y}) height to ${height}`);
+
+            // Update model
+            this.levelData.map[x][y].h = height;
+
+            // Update 3D scene
+            this.updateMapCell(x, y);
+
+            // Re-render grid to show changes
+            this.renderMapGrid();
+
+            // Re-select the block to update editor
+            this.selectBlock(x, y);
+        },
+
+        setBlockType(type) {
+            if (!this.selectedBlock) {
+                console.log('No block selected');
+                return;
+            }
+
+            const { x, y } = this.selectedBlock;
+            console.log(`Setting block (${x}, ${y}) type to ${type}`);
+
+            // Update model
+            this.levelData.map[x][y].t = type;
+
+            // Update 3D scene
+            this.updateMapCell(x, y);
+
+            // Re-render grid to show changes
+            this.renderMapGrid();
+
+            // Re-select the block to update editor
+            this.selectBlock(x, y);
+        },
+
+        updateMapCell(x, y) {
+            // Remove old box at this position
+            const existingBox = this.boxes.find(box =>
+                box.userData && box.userData.x === x && box.userData.y === y
+            );
+
+            if (existingBox) {
+                this.scene.remove(existingBox);
+                const index = this.boxes.indexOf(existingBox);
+                if (index > -1) {
+                    this.boxes.splice(index, 1);
+                }
+            }
+
+            // Create new box with updated data
+            const block = this.levelData.map[x][y];
+            const box = this.createBox(x, y, block.h, block.t);
+            box.userData = { x, y };
+            this.boxes.push(box);
+            this.scene.add(box);
+        },
+
+        clearBlockSelection() {
+            this.selectedBlock = null;
+
+            document.querySelectorAll('.map-cell').forEach(cell => {
+                cell.classList.remove('selected');
+            });
+
+            const editor = document.getElementById('block-editor');
+            editor.style.display = 'none';
+        },
+
+        closeMapEditor() {
+            console.log('Closing map editor');
+            this.toggleMapEditor();
+        },
+
+        resetMapToOriginal() {
+            if (!this.originalLevelData) {
+                console.log('No original data to reset to');
+                return;
+            }
+
+            console.log('Resetting map to original');
+
+            // Restore original level data
+            this.levelData = JSON.parse(JSON.stringify(this.originalLevelData));
+
+            // Clear all boxes
+            this.boxes.forEach(box => this.scene.remove(box));
+            this.boxes = [];
+
+            // Recreate map
+            this.createMap();
+
+            // Reset bot position
+            this.bot.position = {...this.levelData.position};
+            this.updateBotPosition();
+
+            // Re-render grid
+            this.renderMapGrid();
+
+            // Clear selection
+            this.clearBlockSelection();
         }
     };
 
     // Initialize game when page loads
-    window.addEventListener('load', () => game.init());
+    window.addEventListener('load', () => {
+        game.init();
+
+        // Setup map editor toggle button
+        const mapEditorBtn = document.getElementById('toggle-map-editor');
+        if (mapEditorBtn) {
+            mapEditorBtn.addEventListener('click', () => game.toggleMapEditor());
+            // Visibility will be controlled by showScreen()
+        }
+    });
     </script>
 </body>
 </html>

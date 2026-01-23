@@ -86,6 +86,8 @@ $(document).ready(function() {
       lightBot.map.reset();
 
       $(this).button('option', {label: 'Run', icons: {primary: 'ui-icon-play'}}).removeClass('ui-state-highlight');
+      $('#fastRunButton').button('option', {label: 'Fast', icons: {primary: 'ui-icon-seek-end'}}).removeClass('ui-state-highlight');
+      lightBot.speedMultiplier = 1;
     } else {
       var instructions = lightBot.ui.editor.getInstructions($('#programContainer > div > ul > li'));
       var procOne = lightBot.ui.editor.getInstructions($('#procOneContainer > div > ul > li'));
@@ -94,6 +96,32 @@ $(document).ready(function() {
       lightBot.bot.execute();
 
       $(this).button('option', {label: 'Stop', icons: {primary: 'ui-icon-stop'}}).addClass('ui-state-highlight');
+      lightBot.speedMultiplier = 1;
+    }
+  });
+
+  // fast run program button
+  $('#fastRunButton').button({
+    icons: {
+      primary: "ui-icon-seek-end"
+    }
+  }).click(function() {
+    if (lightBot.bot.isInExecutionMode()) {
+      // reset the map (resets the bot as well)
+      lightBot.map.reset();
+
+      $(this).button('option', {label: 'Fast', icons: {primary: 'ui-icon-seek-end'}}).removeClass('ui-state-highlight');
+      $('#runButton').button('option', {label: 'Run', icons: {primary: 'ui-icon-play'}}).removeClass('ui-state-highlight');
+      lightBot.speedMultiplier = 1;
+    } else {
+      var instructions = lightBot.ui.editor.getInstructions($('#programContainer > div > ul > li'));
+      var procOne = lightBot.ui.editor.getInstructions($('#procOneContainer > div > ul > li'));
+      var procTwo = lightBot.ui.editor.getInstructions($('#procTwoContainer > div > ul > li'));
+      lightBot.bot.queueInstructions(instructions, procOne, procTwo);
+      lightBot.bot.execute();
+
+      $(this).button('option', {label: 'Stop', icons: {primary: 'ui-icon-stop'}}).addClass('ui-state-highlight');
+      lightBot.speedMultiplier = 20;
     }
   });
 

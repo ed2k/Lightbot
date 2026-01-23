@@ -80,7 +80,7 @@
       } else {
         currentFrame = Math.min(nbrFrame, animation.totalFrames - 1);
       }
-      currentStep++;
+      currentStep += (lightBot.speedMultiplier || 1);
     }
   }
 

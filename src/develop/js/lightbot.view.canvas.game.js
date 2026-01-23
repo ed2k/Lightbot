@@ -10,6 +10,9 @@ var canvasView = function(canvas) {
   var fpsDelay = 1000 / fps;
   var fpsTimer = window.setInterval(update, fpsDelay/10);
 
+  // speed multiplier for fast run
+  lightBot.speedMultiplier = 1;
+
   // distance between lowest point in the map and the bottom edge
   var offsetY = 50;
 

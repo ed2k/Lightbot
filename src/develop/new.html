@@ -1970,24 +1970,23 @@
         },
 
         updateMapCell(x, y) {
-            // Remove old box at this position
-            const existingBox = this.boxes.find(box =>
-                box.userData && box.userData.x === x && box.userData.y === y
-            );
+            // Calculate the box array index
+            const boxIndex = x * this.levelData.map[0].length + y;
+            const existingBox = this.boxes[boxIndex];
 
             if (existingBox) {
                 this.scene.remove(existingBox);
-                const index = this.boxes.indexOf(existingBox);
-                if (index > -1) {
-                    this.boxes.splice(index, 1);
-                }
             }
 
             // Create new box with updated data
+            // Transform array indices to centered world coordinates
+            const mapX = x - this.levelData.map.length / 2;
+            const mapY = y - this.levelData.map[0].length / 2;
             const block = this.levelData.map[x][y];
-            const box = this.createBox(x, y, block.h, block.t);
-            box.userData = { x, y };
-            this.boxes.push(box);
+            const box = this.createBox(mapX, mapY, block.h, block.t);
+
+            // Store back in the same position in the boxes array
+            this.boxes[boxIndex] = box;
             this.scene.add(box);
         },
 

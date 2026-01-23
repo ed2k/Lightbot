@@ -289,6 +289,175 @@
         #execution-status.active {
             display: block;
         }
+
+        #toggle-ui-mobile {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            text-align: center;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+
+        #toggle-ui-mobile:active {
+            background: #45a049;
+        }
+
+        #ui-panel.collapsed .screen {
+            display: none !important;
+        }
+
+        #ui-panel.collapsed #toggle-ui-mobile {
+            display: block !important;
+        }
+
+        #ui-panel.collapsed {
+            max-height: 50px;
+            min-height: 50px;
+            padding: 5px;
+        }
+
+        #ui-panel.collapsed ~ #gameCanvas {
+            height: calc(100vh - 60px) !important;
+        }
+
+        /* Mobile Responsive Layout */
+        @media (max-width: 768px) {
+            body {
+                overflow-y: auto;
+                overflow-x: hidden;
+            }
+
+            #toggle-ui-mobile {
+                display: block !important;
+            }
+
+            #container {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+                overflow: visible;
+            }
+
+            #ui-panel {
+                position: relative;
+                width: 100%;
+                max-width: 100%;
+                height: auto;
+                max-height: none;
+                border-left: none;
+                border-bottom: 3px solid #4CAF50;
+                order: 1;
+                overflow-y: visible;
+                padding: 15px;
+            }
+
+            #gameCanvas {
+                order: 2;
+                min-height: 400px;
+                height: 50vh;
+                width: 100% !important;
+                display: block;
+            }
+
+            #info-panel {
+                top: 5px;
+                left: 5px;
+                font-size: 11px;
+                padding: 8px;
+            }
+
+            #info-panel h2 {
+                font-size: 14px;
+                margin-bottom: 3px;
+            }
+
+            #camera-controls {
+                bottom: 5px;
+                right: 5px;
+                left: auto;
+                display: flex;
+                gap: 5px;
+            }
+
+            #camera-controls button {
+                padding: 6px 10px;
+                font-size: 10px;
+            }
+
+            button {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+
+            .controls button {
+                min-width: 80px;
+            }
+
+            #instructions-palette {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            #level-list {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .program-area {
+                min-height: 60px;
+                padding: 8px;
+            }
+
+            .program-area h4 {
+                font-size: 11px;
+            }
+
+            .instruction-item {
+                padding: 3px 6px;
+                font-size: 10px;
+            }
+
+            #ui-panel h2 {
+                font-size: 16px;
+                margin-bottom: 10px;
+            }
+
+            #ui-panel h3 {
+                font-size: 13px;
+                margin: 8px 0 4px 0;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #ui-panel {
+                padding: 15px;
+                max-height: 65vh;
+            }
+
+            #gameCanvas {
+                height: 300px;
+            }
+
+            #instructions-palette {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            #level-list {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .program-area {
+                margin: 8px 0;
+            }
+
+            button {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -306,6 +475,8 @@
         </div>
 
         <div id="ui-panel">
+            <button id="toggle-ui-mobile" style="display: none;">▼ Show/Hide Controls</button>
+
             <!-- Welcome Screen -->
             <div id="welcome-screen" class="screen active">
                 <h2>🤖 LightBot 3D</h2>
@@ -519,22 +690,26 @@
             this.scene = new THREE.Scene();
             this.scene.background = new THREE.Color(0x2c3e50);
 
+            // Create renderer
+            const canvas = document.getElementById('gameCanvas');
+            const width = canvas.clientWidth || window.innerWidth;
+            const height = canvas.clientHeight || window.innerHeight;
+
             // Create camera
             this.camera = new THREE.PerspectiveCamera(
                 75,
-                window.innerWidth / window.innerHeight,
+                width / height,
                 0.1,
                 1000
             );
             this.camera.position.set(10, 8, 10);
 
             // Create renderer
-            const canvas = document.getElementById('gameCanvas');
             this.renderer = new THREE.WebGLRenderer({
                 canvas: canvas,
                 antialias: true
             });
-            this.renderer.setSize(window.innerWidth, window.innerHeight);
+            this.renderer.setSize(width, height);
             this.renderer.shadowMap.enabled = true;
             this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -578,6 +753,28 @@
         initUI() {
             // UI initialization (onclick handlers are already in HTML)
             console.log('UI initialized - program areas ready');
+
+            // Mobile UI toggle
+            const toggleBtn = document.getElementById('toggle-ui-mobile');
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', () => {
+                    const panel = document.getElementById('ui-panel');
+                    if (panel.classList.contains('collapsed')) {
+                        panel.classList.remove('collapsed');
+                        toggleBtn.textContent = '▼ Hide Controls';
+                    } else {
+                        panel.classList.add('collapsed');
+                        toggleBtn.textContent = '▶ Show Controls';
+                    }
+
+                    // Resize canvas after toggle
+                    setTimeout(() => {
+                        if (this.renderer) {
+                            this.onWindowResize();
+                        }
+                    }, 100);
+                });
+            }
         },
 
         // ========================================================================
@@ -966,9 +1163,13 @@
         },
 
         onWindowResize() {
-            this.camera.aspect = window.innerWidth / window.innerHeight;
+            const canvas = document.getElementById('gameCanvas');
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+
+            this.camera.aspect = width / height;
             this.camera.updateProjectionMatrix();
-            this.renderer.setSize(window.innerWidth, window.innerHeight);
+            this.renderer.setSize(width, height);
         },
 
         resetCamera() {

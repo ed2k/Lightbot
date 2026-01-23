@@ -697,32 +697,123 @@
         },
 
         createBot() {
-            const textureLoader = new THREE.TextureLoader();
-            textureLoader.load('img/sprites.png', (texture) => {
+            console.log('Creating bot with sprite...');
+
+            // Use HTML Image element to load sprite (works with file:// protocol)
+            const image = new Image();
+            image.crossOrigin = 'anonymous'; // Try to avoid CORS issues
+
+            image.onload = () => {
+                console.log('✓ Sprite image loaded successfully!');
+
+                // Create a canvas and draw the image to it (bypasses CORS restrictions)
+                const canvas = document.createElement('canvas');
+                canvas.width = 640;
+                canvas.height = 400;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(image, 0, 0);
+
+                console.log('✓ Canvas created with sprite image');
+
+                // Create Three.js texture from the canvas
+                const texture = new THREE.CanvasTexture(canvas);
+
+                // Configure texture for pixel art (no filtering/blurring)
+                texture.magFilter = THREE.NearestFilter;
+                texture.minFilter = THREE.NearestFilter;
+
+                // Sprite sheet is 640x400 pixels (8 cols × 4 rows)
+                // Each sprite is 80×100 pixels
+                texture.repeat.set(1/8, 1/4);
+                texture.offset.set(0, 0.75); // Start at top-left (stand animation, SE direction)
+
+                // Create sprite material
                 const spriteMaterial = new THREE.SpriteMaterial({
                     map: texture,
-                    transparent: true
+                    transparent: true,
+                    alphaTest: 0.5 // Don't render transparent pixels
                 });
 
-                texture.repeat.set(1/8, 1/4);
-                texture.offset.set(0, 3/4);
-
+                // Create the sprite
                 this.botMesh = new THREE.Sprite(spriteMaterial);
-                this.botMesh.scale.set(1, 1, 1);
+
+                // Scale sprite (maintain 80:100 aspect ratio, make it visible)
+                this.botMesh.scale.set(2.0, 2.5, 1);
+
+                // Render order to ensure it appears on top
+                this.botMesh.renderOrder = 1000;
+
+                // Disable depth test so sprite always shows
+                spriteMaterial.depthTest = false;
+
+                // Store texture reference for animations
+                this.botTexture = texture;
+                this.botCanvas = canvas;
+                this.botCanvasCtx = ctx;
+                this.botImage = image;
+
+                // Position the bot
                 this.updateBotPosition();
+
+                // Add to scene
                 this.scene.add(this.botMesh);
-            }, undefined, () => {
-                // Fallback to cube
-                const botGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-                const botMaterial = new THREE.MeshLambertMaterial({
-                    color: this.colors.bot,
-                    emissive: 0x331100
-                });
-                this.botMesh = new THREE.Mesh(botGeometry, botMaterial);
-                this.botMesh.castShadow = true;
-                this.updateBotPosition();
-                this.scene.add(this.botMesh);
+
+                console.log('✓ Bot sprite added to scene');
+                console.log('  Position:', this.botMesh.position);
+                console.log('  Scale:', this.botMesh.scale);
+            };
+
+            image.onerror = (error) => {
+                console.error('✗ Failed to load sprite image:', error);
+                console.log('⚠ Using fallback 3D robot mesh');
+
+                // Create fallback 3D robot
+                this.createFallbackBot();
+            };
+
+            // Set the image source (same as original index.html)
+            image.src = 'img/sprites.png';
+        },
+
+        createFallbackBot() {
+            const botGroup = new THREE.Group();
+
+            // Body
+            const bodyGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.4);
+            const bodyMaterial = new THREE.MeshLambertMaterial({
+                color: 0xff6b35,
+                emissive: 0x331100
             });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 0.4;
+            body.castShadow = true;
+            botGroup.add(body);
+
+            // Head
+            const headGeometry = new THREE.BoxGeometry(0.5, 0.4, 0.4);
+            const head = new THREE.Mesh(headGeometry, bodyMaterial);
+            head.position.y = 1.0;
+            head.castShadow = true;
+            botGroup.add(head);
+
+            // Eyes (glowing cyan)
+            const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+            const eyeGeometry = new THREE.BoxGeometry(0.1, 0.1, 0.05);
+
+            const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            leftEye.position.set(-0.15, 1.05, 0.2);
+            botGroup.add(leftEye);
+
+            const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            rightEye.position.set(0.15, 1.05, 0.2);
+            botGroup.add(rightEye);
+
+            this.botMesh = botGroup;
+            this.botTexture = null; // No texture for fallback
+            this.updateBotPosition();
+            this.scene.add(this.botMesh);
+
+            console.log('✓ Fallback bot created and added to scene');
         },
 
         updateBotPosition() {
@@ -734,13 +825,78 @@
             const currentTile = level.map[this.bot.position.x][this.bot.position.y];
             const height = currentTile.h * 0.5;
 
-            this.botMesh.position.set(mapX, height + 0.5, mapY);
+            // Position bot on top of tile
+            // For sprites, position slightly higher for better visibility
+            if (this.botTexture) {
+                // Sprite bot - elevated position for visibility
+                this.botMesh.position.set(mapX, height + 1.25, mapY);
+                console.log('Bot sprite positioned at:', this.botMesh.position);
+            } else {
+                // Mesh bot - standard position
+                this.botMesh.position.set(mapX, height + 0.8, mapY);
+                console.log('Bot mesh positioned at:', this.botMesh.position);
+            }
+
+            // Update sprite animation if using sprite texture
+            this.updateBotSprite();
+        },
+
+        updateBotSprite() {
+            // Skip if no sprite texture (using fallback mesh)
+            if (!this.botMesh || !this.botTexture) return;
+            if (!this.botMesh.material || !this.botMesh.material.map) return;
+
+            // Animation definitions (matching original game exactly)
+            // sX is the X pixel position in sprite sheet, frames is number of animation frames
+            const animations = {
+                stand: { sX: 0, frames: 1, width: 80, height: 100 },
+                walk: { sX: 80, frames: 3, width: 80, height: 100 },
+                light: { sX: 480, frames: 2, width: 80, height: 100 },
+                jumpUp: { sX: 320, frames: 1, width: 80, height: 100 },
+                jumpDown: { sX: 400, frames: 1, width: 80, height: 100 }
+            };
+
+            const anim = animations[this.bot.currentAnimation] || animations.stand;
+
+            // Sprite sheet dimensions
+            const sheetWidth = 640;   // Total sheet width in pixels
+            const sheetHeight = 400;  // Total sheet height in pixels
+
+            // Direction row - adjust by rotating left 90 degrees (+1 direction)
+            // Game directions: 0=SE, 1=NE, 2=NW, 3=SW
+            // Sprite rows: 0=NE, 1=NW, 2=SW, 3=SE (rotated left from game)
+            const directionRow = (this.bot.direction + 1) % 4;
+
+            // Calculate current frame for animated sprites
+            let currentFrame = 0;
+            if (anim.frames > 1) {
+                // Animate at ~5 FPS (200ms per frame)
+                currentFrame = Math.floor(Date.now() / 200) % anim.frames;
+            }
+
+            // Calculate source X and Y in pixels (matching original canvas code)
+            const srcX = anim.sX + (currentFrame * anim.width);
+            const srcY = directionRow * anim.height;
+
+            // Convert pixel coordinates to UV coordinates (0-1 range)
+            // UV origin is bottom-left in Three.js, top-left in image
+            const u = srcX / sheetWidth;
+            const v = 1.0 - (srcY + anim.height) / sheetHeight;
+
+            // Set the texture offset
+            this.botTexture.offset.set(u, v);
+
+            // Debug logging (comment out in production)
+            // console.log(`Bot: ${this.bot.currentAnimation}, dir=${this.bot.direction}, spriteRow=${directionRow}, frame=${currentFrame}, u=${u}, v=${v}`);
         },
 
         animate() {
             requestAnimationFrame(() => this.animate());
 
             this.controls.update();
+
+            // Update bot sprite animation
+            this.updateBotSprite();
 
             // Animate light boxes (pulsing effect)
             this.boxes.forEach(box => {
@@ -930,6 +1086,7 @@
             // Reset bot
             this.bot.position = { ...this.bot.startPosition };
             this.bot.direction = this.bot.startDirection;
+            this.bot.currentAnimation = 'stand';
 
             // Reset level data
             const originalLevel = this.levels[this.currentLevel];
@@ -951,6 +1108,18 @@
             }
 
             this.updateBotPosition();
+
+            // Update bot rotation for fallback mesh
+            if (!this.botTexture && this.botMesh) {
+                // Rotate fallback bot to face direction
+                const rotations = [
+                    Math.PI * 0.75,   // SE: 135°
+                    Math.PI * 0.25,   // NE: 45°
+                    -Math.PI * 0.25,  // NW: -45°
+                    -Math.PI * 0.75   // SW: -135°
+                ];
+                this.botMesh.rotation.y = rotations[this.bot.direction];
+            }
         },
 
         // ========================================================================
@@ -958,6 +1127,9 @@
         // ========================================================================
 
         botWalk() {
+            // Set walk animation
+            this.bot.currentAnimation = 'walk';
+
             const directions = [
                 { x: 0, y: -1 }, // SE
                 { x: 1, y: 0 },  // NE
@@ -979,6 +1151,13 @@
                     this.bot.position.y = newY;
                 }
             }
+
+            // Return to stand after a delay
+            setTimeout(() => {
+                if (this.bot.currentAnimation === 'walk') {
+                    this.bot.currentAnimation = 'stand';
+                }
+            }, 400);
         },
 
         botJump() {
@@ -998,15 +1177,34 @@
                 const currentHeight = this.levelData.map[this.bot.position.x][this.bot.position.y].h;
                 const targetHeight = this.levelData.map[newX][newY].h;
 
+                // Set appropriate jump animation
+                if (targetHeight > currentHeight) {
+                    this.bot.currentAnimation = 'jumpUp';
+                } else if (targetHeight < currentHeight) {
+                    this.bot.currentAnimation = 'jumpDown';
+                } else {
+                    this.bot.currentAnimation = 'walk';
+                }
+
                 // Can jump up 1 level or down any amount
                 if (targetHeight - currentHeight === 1 || currentHeight > targetHeight) {
                     this.bot.position.x = newX;
                     this.bot.position.y = newY;
                 }
             }
+
+            // Return to stand after jump
+            setTimeout(() => {
+                if (this.bot.currentAnimation === 'jumpUp' || this.bot.currentAnimation === 'jumpDown') {
+                    this.bot.currentAnimation = 'stand';
+                }
+            }, 400);
         },
 
         botLight() {
+            // Set light animation
+            this.bot.currentAnimation = 'light';
+
             const currentTile = this.levelData.map[this.bot.position.x][this.bot.position.y];
 
             if (currentTile.t === 'l') {
@@ -1042,14 +1240,43 @@
                     this.boxes[boxIndex] = newBox;
                 }
             }
+
+            // Return to stand after light action
+            setTimeout(() => {
+                if (this.bot.currentAnimation === 'light') {
+                    this.bot.currentAnimation = 'stand';
+                }
+            }, 400);
         },
 
         botTurnLeft() {
             this.bot.direction = (this.bot.direction + 1) % 4;
+
+            // Update bot rotation for fallback mesh
+            if (!this.botTexture && this.botMesh) {
+                const rotations = [
+                    Math.PI * 0.75,   // SE: 135°
+                    Math.PI * 0.25,   // NE: 45°
+                    -Math.PI * 0.25,  // NW: -45°
+                    -Math.PI * 0.75   // SW: -135°
+                ];
+                this.botMesh.rotation.y = rotations[this.bot.direction];
+            }
         },
 
         botTurnRight() {
             this.bot.direction = (this.bot.direction - 1 + 4) % 4;
+
+            // Update bot rotation for fallback mesh
+            if (!this.botTexture && this.botMesh) {
+                const rotations = [
+                    Math.PI * 0.75,   // SE: 135°
+                    Math.PI * 0.25,   // NE: 45°
+                    -Math.PI * 0.25,  // NW: -45°
+                    -Math.PI * 0.75   // SW: -135°
+                ];
+                this.botMesh.rotation.y = rotations[this.bot.direction];
+            }
         },
 
         // ========================================================================

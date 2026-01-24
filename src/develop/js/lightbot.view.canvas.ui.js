@@ -5,7 +5,7 @@
 
   var ui = {
     showWelcomeScreen: function(hist) {
-      lightBot.ui.media.playMenuAudio();
+      // lightBot.ui.media.playMenuAudio();
 
       // save in history if parameter hist is not set and then set the new page title
       if (hist == null && lightBot.ui.History) lightBot.ui.History.pushState({page: 'welcomeScreen'});
@@ -15,7 +15,7 @@
       $('#welcomeScreen').show();
     },
     showHelpScreen: function(hist) {
-      lightBot.ui.media.playMenuAudio();
+      // lightBot.ui.media.playMenuAudio();
 
       // save in history if parameter hist is not set and then set the new page title
       if (hist == null && lightBot.ui.History) lightBot.ui.History.pushState({page: 'helpScreen'});
@@ -25,7 +25,7 @@
       $('#helpScreen').show();
     },
     showAchievementsScreen: function(hist) {
-      lightBot.ui.media.playMenuAudio();
+      // lightBot.ui.media.playMenuAudio();
 
       var enabled = false;
 
@@ -44,7 +44,7 @@
       $('#achievementsScreen').show();
     },
     showLevelSelectScreen: function(hist) {
-      lightBot.ui.media.playMenuAudio();
+      // lightBot.ui.media.playMenuAudio();
 
       $('#levelList').empty();
       for (var i = 0; i < lightBot.map.getNbrOfLevels(); i++) {
@@ -84,7 +84,7 @@
       console.log(command);
     },
     showGameScreen: function(level, hist) {
-      lightBot.ui.media.playGameAudio();
+      // lightBot.ui.media.playGameAudio();
 
       // load the map
       lightBot.map.loadMap(level);

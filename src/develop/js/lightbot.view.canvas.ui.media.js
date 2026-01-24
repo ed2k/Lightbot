@@ -2,7 +2,9 @@
 /*jsl:import lightbot.model.game.js*/
 
 $(document).ready(function() {
-  // audio player
+  return;
+  // audio player - DISABLED to prevent loading menu.mp3 and game.mp3
+  /*
   $("#audioPlayer").jPlayer({
     ready: function () {
      $(this).jPlayer("setMedia", lightBot.ui.media.audio.menu).jPlayer("play"); // attempt to auto-play
@@ -13,8 +15,10 @@ $(document).ready(function() {
     solution: "flash, html",
     cssSelectorAncestor: '#audioContainer'
   });
+  */
 
-  // load video container
+  // load video container - DISABLED to prevent loading goal.webm
+  /*
   $("#videoPlayer").jPlayer({
     ready: function () {
       $(this).jPlayer("setMedia", lightBot.ui.media.video[0]); // attempt to auto-play
@@ -30,13 +34,15 @@ $(document).ready(function() {
       cssClass: "jp-video-300p"
     }
   });
+  */
 
-  lightBot.ui.media.audioPlayer = $('#audioPlayer');
-  lightBot.ui.media.videoPlayer = $('#videoPlayer');
+  // Create dummy jQuery objects to prevent errors
+  lightBot.ui.media.audioPlayer = $('<div>');
+  lightBot.ui.media.videoPlayer = $('<div>');
 });
 
 (function() {
-
+  return;
   var media = {
     audioPlayer: null,
     videoPlayer: null,
@@ -60,35 +66,40 @@ $(document).ready(function() {
       {webmv: "media/video/repeat.webm", m4v: "media/video/repeat.mp4", ogv: "media/video/repeat.ogv"},
       {webmv: "media/video/medal.webm", m4v: "media/video/medal.mp4", ogv: "media/video/medal.ogv"}
     ],
-    audioEnabled: true,
+    audioEnabled: false,
     playMenuAudio: function() {
-      if (this.audioPlayer.data('jPlayer').status.media.mp3 != this.audio.menu.mp3) {
-        this.audioPlayer.jPlayer('setMedia', this.audio.menu);
-        if (this.audioEnabled) {
-          this.audioPlayer.jPlayer('play');
-        }
-      }
+      // Audio disabled - no longer loads menu.mp3
+      // if (this.audioPlayer.data('jPlayer').status.media.mp3 != this.audio.menu.mp3) {
+      //   this.audioPlayer.jPlayer('setMedia', this.audio.menu);
+      //   if (this.audioEnabled) {
+      //     this.audioPlayer.jPlayer('play');
+      //   }
+      // }
     },
     playGameAudio: function () {
-      if (this.audioPlayer.data('jPlayer').status.media.mp3 != this.audio.game.mp3) {
-        this.audioPlayer.jPlayer('setMedia', this.audio.game);
-        if (this.audioEnabled) {
-          this.audioPlayer.jPlayer('play');
-        }
-      }
+      // Audio disabled - no longer loads game.mp3
+      // if (this.audioPlayer.data('jPlayer').status.media.mp3 != this.audio.game.mp3) {
+      //   this.audioPlayer.jPlayer('setMedia', this.audio.game);
+      //   if (this.audioEnabled) {
+      //     this.audioPlayer.jPlayer('play');
+      //   }
+      // }
     },
     playVideo: function(x) {
-      this.videoPlayer.jPlayer("setMedia", this.video[x]);
+      // Video disabled - no longer loads video files
+      // this.videoPlayer.jPlayer("setMedia", this.video[x]);
     },
     toggleAudioOn: function() {
       this.audioEnabled = true;
-      this.audioPlayer.jPlayer('play');
+      // Audio player disabled
+      // this.audioPlayer.jPlayer('play');
 
       $('.audioToggleButton').children('span.ui-button-icon-primary').addClass('ui-icon-volume-on').removeClass('ui-icon-volume-off');
     },
     toggleAudioOff: function() {
       this.audioEnabled = false;
-      this.audioPlayer.jPlayer('pause');
+      // Audio player disabled
+      // this.audioPlayer.jPlayer('pause');
 
       $('.audioToggleButton').children('span.ui-button-icon-primary').addClass('ui-icon-volume-off').removeClass('ui-icon-volume-on');
     },

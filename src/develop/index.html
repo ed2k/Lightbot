@@ -11,7 +11,7 @@
     <link type="text/css" href="css/lightbot.css" rel="stylesheet" />
     <script type="text/javascript" src="js/jquery-1.7.min.js"></script>
     <script type="text/javascript" src="js/jquery-ui-1.8.16.custom.min.js"></script>
-    <script type="text/javascript" src="js/jquery.jplayer.min.js"></script>
+    <!-- <script type="text/javascript" src="js/jquery.jplayer.min.js"></script> -->
     <script type="text/javascript" src="js/jquery.history.js"></script>
     <!-- model.game.js introduce global lightbot -->
     <script type="text/javascript" src="js/lightbot.model.game.js"></script>
@@ -28,7 +28,7 @@
     <!--canvans.js initialize global animation view from canvasView()-->
     <script type="text/javascript" src="js/lightbot.view.canvas.js"></script>
     <script type="text/javascript" src="js/lightbot.view.canvas.ui.js"></script>
-    <script type="text/javascript" src="js/lightbot.view.canvas.ui.media.js"></script>
+    <!-- <script type="text/javascript" src="js/lightbot.view.canvas.ui.media.js"></script> -->
     <!--buttons install click actions -->
     <script type="text/javascript" src="js/lightbot.view.canvas.ui.buttons.js"></script>
     <script type="text/javascript" src="js/lightbot.view.canvas.ui.dialogs.js"></script>
@@ -43,6 +43,30 @@
     <script type="text/javascript" src="js/lightbot.view.canvas.medals.js"></script>
     <script type="text/javascript" src="js/lightbot.view.canvas.achievements.js"></script>
     <script type="text/javascript" src="js/lightbot.view.mapeditor.js"></script>
+    <script type="text/javascript">
+      // URL parameter level loading - runs after all scripts loaded
+      window.addEventListener('load', function() {
+        console.log('Window load event - checking for level parameter');
+        var urlParams = new URLSearchParams(window.location.search);
+        var levelParam = urlParams.get('level');
+
+        if (levelParam) {
+          var levelNumber = parseInt(levelParam, 10);
+          if (!isNaN(levelNumber) && levelNumber >= 1 && levelNumber <= 25) {
+            console.log('Window load: Loading level from URL:', levelNumber);
+            // Delay to ensure UI is ready
+            setTimeout(function() {
+              if (lightBot && lightBot.ui && lightBot.ui.showGameScreen) {
+                console.log('Window load: Calling showGameScreen');
+                lightBot.ui.showGameScreen(levelNumber - 1, false);
+              } else {
+                console.error('Window load: lightBot.ui.showGameScreen not available');
+              }
+            }, 200);
+          }
+        }
+      });
+    </script>
   </head>
   <body>
     <div id="audioContainer">
@@ -51,10 +75,11 @@
 
     <div id="lightbot">
       <div id="welcomeScreen" class="ui-screen">
-        <button class="helpButton">Help</button>
-        <button class="achievementsButton">Achievements</button>
+        <div id="welcomeContent">
+          <h1 style="text-align: center; font-size: 48px; margin-top: 100px; margin-bottom: 30px;">LightBot</h1>
+          <p style="text-align: center; font-size: 24px; margin-bottom: 50px;">Lowest Number of Blocks Research</p>
+        </div>
         <button class="levelSelectButton ui-state-highlight">Start Game</button>
-        <button class="audioToggleButton">Toggle Audio</button>
       </div>
 
       <div id="achievementsScreen" class="ui-screen ui-helper-hidden">

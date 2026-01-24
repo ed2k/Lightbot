@@ -229,7 +229,7 @@ a:hover {
 }
 
 #welcomeScreen {
-  background: #4b4646 url('../img/welcome_screen_bg.png') no-repeat left top;
+  background: #4b4646;
 }
 
 #gameScreen {
@@ -239,30 +239,32 @@ a:hover {
 /* WELCOME SCREEN
    ================================================== */
 
-#welcomeScreen .helpButton, #welcomeScreen .achievementsButton, #welcomeScreen .levelSelectButton, #welcomeScreen .audioToggleButton {
+#welcomeContent {
+  text-align: center;
+  padding-top: 50px;
+}
+
+#welcomeContent h1 {
+  color: #fffff2;
+  font-size: 48px;
+  margin-bottom: 20px;
+}
+
+#welcomeContent p {
+  color: #fffff2;
+  font-size: 24px;
+  margin-bottom: 40px;
+}
+
+#welcomeScreen .levelSelectButton {
   position: absolute;
-  bottom: 20px;
-}
-
-#welcomeScreen .levelSelectButton {
-  bottom: 19px;
-}
-
-#welcomeScreen .audioToggleButton {
-  left: 40px;
-}
-
-#welcomeScreen .helpButton {
-  left: 75px;
-}
-
-#welcomeScreen .achievementsButton {
-  left: 150px;
-}
-
-#welcomeScreen .levelSelectButton {
-  left: 278px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  margin-top: 50px;
   border-width: 2px;
+  font-size: 24px;
+  padding: 20px 40px;
 }
 
 /* ACHIEVEMENTS SCREEN

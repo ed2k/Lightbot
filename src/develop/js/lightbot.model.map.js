@@ -616,5 +616,100 @@
     levelNumber = null; // by setting levelNumber to null, the map is marked as completed
   };
 
+  // Map editor helper functions
+  map.getCurrentMapState = function() {
+    if (!map.ready()) {
+      return null;
+    }
+
+    var state = {
+      position: {
+        x: lightBot.bot.currentPos.x,
+        y: lightBot.bot.currentPos.y
+      },
+      direction: lightBot.bot.direction,
+      map: [],
+      medals: medals
+    };
+
+    // Deep copy the map data
+    for (var i = 0; i < levelSize.x; i++) {
+      state.map[i] = [];
+      for (var j = 0; j < levelSize.y; j++) {
+        var box = mapRef[i][j];
+        var type = 'b'; // default to basic box
+
+        if (box instanceof lightBot.LightBox) {
+          type = 'l';
+        } else if (box instanceof lightBot.ElevatorBox) {
+          type = 'e';
+        }
+
+        state.map[i][j] = {
+          h: box.height,
+          t: type
+        };
+      }
+    }
+
+    return state;
+  };
+
+  map.loadMapState = function(state) {
+    // Load a map state (used for reset)
+    lightBot.bot.currentPos.x = state.position.x;
+    lightBot.bot.currentPos.y = state.position.y;
+    lightBot.bot.direction = state.direction;
+
+    // Update all tiles
+    for (var i = 0; i < state.map.length; i++) {
+      for (var j = 0; j < state.map[i].length; j++) {
+        if (mapRef[i] && mapRef[i][j]) {
+          var oldBox = mapRef[i][j];
+          var newHeight = state.map[i][j].h;
+          var newType = state.map[i][j].t;
+
+          // Check if type changed, if so recreate the box
+          var oldType = 'b';
+          if (oldBox instanceof lightBot.LightBox) {
+            oldType = 'l';
+          } else if (oldBox instanceof lightBot.ElevatorBox) {
+            oldType = 'e';
+          }
+
+          if (oldType !== newType) {
+            // Recreate box with new type
+            switch (newType) {
+              case 'b':
+                mapRef[i][j] = new lightBot.Box(newHeight, i, j);
+                break;
+              case 'l':
+                mapRef[i][j] = new lightBot.LightBox(newHeight, i, j);
+                break;
+              case 'e':
+                mapRef[i][j] = new lightBot.ElevatorBox(newHeight, i, j);
+                break;
+            }
+          } else {
+            // Just update height
+            mapRef[i][j].height = newHeight;
+          }
+        }
+      }
+    }
+  };
+
+  map.updateMapTile = function(x, y) {
+    // Force update a single tile (for map editor)
+    // This function is called after the map state has been updated in getCurrentMapState
+    // The box object itself has already been modified, so this is mainly for validation
+    if (mapRef[x] && mapRef[x][y]) {
+      // Box has already been updated via direct property access
+      // Just ensure the box is still valid
+      return true;
+    }
+    return false;
+  };
+
   lightBot.map = map;
 })();

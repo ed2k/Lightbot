@@ -42,6 +42,7 @@
     <script type="text/javascript" src="js/lightbot.view.canvas.projection.js"></script>
     <script type="text/javascript" src="js/lightbot.view.canvas.medals.js"></script>
     <script type="text/javascript" src="js/lightbot.view.canvas.achievements.js"></script>
+    <script type="text/javascript" src="js/lightbot.view.mapeditor.js"></script>
   </head>
   <body>
     <div id="audioContainer">
@@ -168,6 +169,7 @@
           <button id="clearButton"><h2>Clear</h2></button>
           <button id="runButton">Run</button>
           <button id="fastRunButton">Fast</button>
+          <button id="mapEditorButton" style="background: #FF9800;">Map Editor</button>
         </div>
         <div id="instructionsContainer">
           <h2>Instructions</h2>
@@ -212,6 +214,46 @@
             <ul id="procTwoList">
             </ul>
           </div>
+        </div>
+      </div>
+
+      <div id="mapEditorScreen" class="ui-screen ui-helper-hidden">
+        <h1>Map Editor</h1>
+        <div style="margin-bottom: 15px;">
+          <button id="closeMapEditorButton" class="ui-state-highlight">Back to Game</button>
+          <button id="resetMapButton">Reset Map</button>
+        </div>
+
+        <div id="mapGridContainer" style="overflow: auto; margin: 15px 0; padding: 10px; background: #1a1a1a; border: 2px solid #4CAF50; border-radius: 5px;">
+          <div id="mapGrid"></div>
+        </div>
+
+        <div id="blockEditor" style="display: none; background: #2a2a2a; padding: 15px; border-radius: 5px; margin-top: 10px;">
+          <h3>Editing Block (<span id="editCoords"></span>)</h3>
+
+          <div style="margin: 10px 0;">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold;">Height:</label>
+            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+              <button class="height-btn" data-height="0">0</button>
+              <button class="height-btn" data-height="1">1</button>
+              <button class="height-btn" data-height="2">2</button>
+              <button class="height-btn" data-height="3">3</button>
+              <button class="height-btn" data-height="4">4</button>
+              <button class="height-btn" data-height="5">5</button>
+              <button class="height-btn" data-height="6">6</button>
+            </div>
+          </div>
+
+          <div style="margin: 10px 0;">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold;">Type:</label>
+            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+              <button class="type-btn" data-type="b" style="flex: 1; background: #999;">Normal</button>
+              <button class="type-btn" data-type="l" style="flex: 1; background: #0468fb;">Light</button>
+              <button class="type-btn" data-type="e" style="flex: 1; background: #dc84bf;">Elevator</button>
+            </div>
+          </div>
+
+          <button id="clearSelectionButton" style="width: 100%; margin-top: 10px; background: #666;">Clear Selection</button>
         </div>
       </div>
 

@@ -581,3 +581,84 @@ li.ui-draggable-dragging {
   width: 128px;
   height: 60px;
 }
+
+/* MAP EDITOR
+   ================================================== */
+
+#mapEditorButton {
+  width: 128px;
+  height: 40px;
+  margin-left: 10px;
+}
+
+#mapEditorScreen {
+  padding: 20px;
+  overflow-y: auto;
+  background: #4b4646;
+}
+
+#mapGrid {
+  display: inline-grid;
+  gap: 2px;
+  background: #333;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.map-cell {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #666;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  transition: all 0.2s;
+  position: relative;
+  color: #000;
+}
+
+.map-cell:hover {
+  border-color: #4CAF50;
+  transform: scale(1.1);
+  z-index: 10;
+}
+
+.map-cell.selected {
+  border: 3px solid #FFD700 !important;
+  box-shadow: 0 0 10px #FFD700;
+}
+
+.map-cell.bot-position {
+  border: 3px solid #00FF00 !important;
+  box-shadow: 0 0 10px #00FF00;
+}
+
+.height-btn, .type-btn {
+  padding: 8px 12px;
+  min-width: 50px;
+  font-size: 13px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  background: #555;
+  color: white;
+  font-weight: bold;
+}
+
+.height-btn:hover, .type-btn:hover {
+  background: #777;
+}
+
+.height-btn.active {
+  background: #FFD700 !important;
+  color: #000;
+}
+
+.type-btn.active {
+  background: #FFD700 !important;
+  color: #000;
+}

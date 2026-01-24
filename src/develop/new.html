@@ -1190,8 +1190,9 @@
             if (!this.botMesh || !this.levelData) return;
 
             const level = this.levelData;
-            const mapX = this.bot.position.x - level.map.length / 2;
-            const mapY = this.bot.position.y - level.map[0].length / 2;
+            // Complement/invert bot position to match map coordination
+            const mapX = level.map.length / 2 - this.bot.position.x - 1;
+            const mapY = level.map[0].length / 2 - this.bot.position.y - 1;
             const currentTile = level.map[this.bot.position.x][this.bot.position.y];
             const height = currentTile.h * 0.5;
 
@@ -1237,9 +1238,9 @@
 
             // Direction mapping - match sprite rows to game directions
             // Game dirs: 0=SE, 1=NE, 2=NW, 3=SW
-            // Sprite rows: 0=NE, 1=SE, 2=SW, 3=NW (empirically determined)
-            // Mapping: SE->1, NE->0, NW->3, SW->2
-            const directionMap = [1, 0, 3, 2];
+            // Sprite rows: adjusted for swapped x/y coordinate system
+            // Mapping rotated 90° counter-clockwise: SE->0, NE->3, NW->2, SW->1
+            const directionMap = [0, 3, 2, 1];
             const directionRow = directionMap[this.bot.direction];
 
             // Calculate current frame for animated sprites
@@ -1530,12 +1531,12 @@
             // Set walk animation
             this.bot.currentAnimation = 'walk';
 
-            // Original direction vectors (correct for movement)
+            // Direction vectors rotated 90° left to match complemented coordinates
             const directions = [
-                { x: 0, y: -1 }, // SE
-                { x: 1, y: 0 },  // NE
-                { x: 0, y: 1 },  // NW
-                { x: -1, y: 0 }  // SW
+                { x: 1, y: 0 },  // SE (rotated from 0,-1)
+                { x: 0, y: 1 },  // NE (rotated from 1,0)
+                { x: -1, y: 0 }, // NW (rotated from 0,1)
+                { x: 0, y: -1 }  // SW (rotated from -1,0)
             ];
 
             const dir = directions[this.bot.direction];
@@ -1562,12 +1563,12 @@
         },
 
         botJump() {
-            // Original direction vectors (correct for movement)
+            // Direction vectors rotated 90° left to match complemented coordinates
             const directions = [
-                { x: 0, y: -1 }, // SE
-                { x: 1, y: 0 },  // NE
-                { x: 0, y: 1 },  // NW
-                { x: -1, y: 0 }  // SW
+                { x: 1, y: 0 },  // SE (rotated from 0,-1)
+                { x: 0, y: 1 },  // NE (rotated from 1,0)
+                { x: -1, y: 0 }, // NW (rotated from 0,1)
+                { x: 0, y: -1 }  // SW (rotated from -1,0)
             ];
 
             const dir = directions[this.bot.direction];

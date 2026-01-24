@@ -1029,6 +1029,7 @@
         createElevatorBox(group, height) {
             const boxHeight = height * 0.5;
             const stickWidth = 0.1;
+            const edgeMaterial = new THREE.LineBasicMaterial({ color: 0x333333 });
 
             // Base platform
             const baseGeometry = new THREE.BoxGeometry(1, 0.25, 1);
@@ -1037,6 +1038,12 @@
             base.position.y = 0.125;
             base.castShadow = true;
             group.add(base);
+
+            // Base edges
+            const baseEdges = new THREE.EdgesGeometry(baseGeometry);
+            const baseLines = new THREE.LineSegments(baseEdges, edgeMaterial);
+            baseLines.position.y = 0.125;
+            group.add(baseLines);
 
             // Vertical stick
             const stickGeometry = new THREE.BoxGeometry(stickWidth, boxHeight - 0.5, stickWidth);
@@ -1050,6 +1057,12 @@
             top.position.y = boxHeight - 0.125;
             top.castShadow = true;
             group.add(top);
+
+            // Top edges
+            const topEdges = new THREE.EdgesGeometry(baseGeometry);
+            const topLines = new THREE.LineSegments(topEdges, edgeMaterial);
+            topLines.position.y = boxHeight - 0.125;
+            group.add(topLines);
         },
 
         createBot() {
@@ -1927,6 +1940,9 @@
             // Update model
             this.levelData.map[x][y].h = height;
 
+            // Also update the source levels array so changes persist on reset
+            this.levels[this.currentLevel].map[x][y].h = height;
+
             // Update 3D scene
             this.updateMapCell(x, y);
 
@@ -1948,6 +1964,9 @@
 
             // Update model
             this.levelData.map[x][y].t = type;
+
+            // Also update the source levels array so changes persist on reset
+            this.levels[this.currentLevel].map[x][y].t = type;
 
             // Update 3D scene
             this.updateMapCell(x, y);

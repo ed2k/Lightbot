@@ -925,10 +925,10 @@
             this.levelData = JSON.parse(JSON.stringify(level)); // Deep copy
 
             // Set bot starting position
-            // Transform coordinates: index.html uses [col][flipped_row], new.html uses [row][col]
+            // Original had one dimension correct - try flipping both dimensions
             const transformedPosition = {
-                x: level.map.length - 1 - level.position.y,  // row = map.length - 1 - y
-                y: level.position.x                          // col = x
+                x: level.map.length - 1 - level.position.y,      // row = flip position.y
+                y: level.map[0].length - 1 - level.position.x    // col = flip position.x
             };
             this.bot.position = { ...transformedPosition };
             this.bot.direction = level.direction;
@@ -1522,10 +1522,10 @@
 
             // Direction vectors matching index.html bot movement logic
             const directions = [
-                { x: 0, y: -1 },  // SE: direction 0, moves y--
-                { x: 1, y: 0 },   // NE: direction 1, moves x++
-                { x: 0, y: 1 },   // NW: direction 2, moves y++
-                { x: -1, y: 0 }   // SW: direction 3, moves x--
+                { x: 1, y: 0 },   // SE: direction 0
+                { x: 0, y: 1 },   // NE: direction 1
+                { x: -1, y: 0 },  // NW: direction 2
+                { x: 0, y: -1 }   // SW: direction 3
             ];
 
             const dir = directions[this.bot.direction];
@@ -1554,10 +1554,10 @@
         botJump() {
             // Direction vectors matching index.html bot movement logic
             const directions = [
-                { x: 0, y: -1 },  // SE: direction 0, moves y--
-                { x: 1, y: 0 },   // NE: direction 1, moves x++
-                { x: 0, y: 1 },   // NW: direction 2, moves y++
-                { x: -1, y: 0 }   // SW: direction 3, moves x--
+                { x: 1, y: 0 },   // SE: direction 0
+                { x: 0, y: 1 },   // NE: direction 1
+                { x: -1, y: 0 },  // NW: direction 2
+                { x: 0, y: -1 }   // SW: direction 3
             ];
 
             const dir = directions[this.bot.direction];
@@ -1642,7 +1642,7 @@
         },
 
         botTurnLeft() {
-            // Turn left = decrease direction (counter-clockwise in isometric view)
+            // Turn left visually = decrease direction in transformed coordinates
             this.bot.direction = (this.bot.direction - 1 + 4) % 4;
 
             // Update bot rotation for fallback mesh
@@ -1658,7 +1658,7 @@
         },
 
         botTurnRight() {
-            // Turn right = increase direction (clockwise in isometric view)
+            // Turn right visually = increase direction in transformed coordinates
             this.bot.direction = (this.bot.direction + 1) % 4;
 
             // Update bot rotation for fallback mesh

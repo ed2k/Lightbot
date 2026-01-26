@@ -121,7 +121,7 @@ $(document).ready(function() {
       lightBot.bot.execute();
 
       $(this).button('option', {label: 'Stop', icons: {primary: 'ui-icon-stop'}}).addClass('ui-state-highlight');
-      lightBot.speedMultiplier = 20;
+      lightBot.speedMultiplier = 401;
     }
   });
 

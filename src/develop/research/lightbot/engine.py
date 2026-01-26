@@ -33,18 +33,41 @@ class LightBotEngine:
         self._init_from_level()
 
     def _init_from_level(self):
-        """Initialize state from level data."""
+        """Initialize state from level data.
+
+        The JS implementation transforms the map during loading:
+        - File format: map[row][column]
+        - JS mapRef[column][mapLength - row - 1] = map_file[row][column]
+
+        This flips the row order and swaps the dimensions so that:
+        - X = column index (0 to width-1)
+        - Y = inverted row index (0 to height-1)
+
+        We apply the same transformation here for consistency.
+        """
         # Bot state
         self.bot_x, self.bot_y = self.level["position"]
         self.bot_dir = self.level["direction"]
 
-        # Map dimensions - the map is indexed as map[x][y]
-        # In the JS, map is an array of columns (x), each containing rows (y)
-        self.map_width = len(self.level["map"])
-        self.map_height = len(self.level["map"][0]) if self.map_width > 0 else 0
+        # Original file dimensions
+        file_map = self.level["map"]
+        num_rows = len(file_map)
+        num_cols = len(file_map[0]) if num_rows > 0 else 0
 
-        # Deep copy map data to allow modifications
-        self.map_data = deepcopy(self.level["map"])
+        # Map dimensions after transformation (matching JS)
+        # JS: levelSize.x = maps[x].map[0].length (columns)
+        # JS: levelSize.y = maps[x].map.length (rows)
+        self.map_width = num_cols   # X dimension = columns
+        self.map_height = num_rows  # Y dimension = rows
+
+        # Transform map data like JS does:
+        # mapRef[j][mapLength - i - 1] = map_file[i][j]
+        # where i = row index, j = column index
+        self.map_data = [[None for _ in range(num_rows)] for _ in range(num_cols)]
+        for i in range(num_rows):      # row index in file
+            for j in range(num_cols):  # column index in file
+                # Copy tile data to transformed position
+                self.map_data[j][num_rows - i - 1] = deepcopy(file_map[i][j])
 
         # Track light positions and states
         self.light_positions: list[tuple[int, int]] = []
@@ -54,7 +77,7 @@ class LightBotEngine:
         self.elevator_positions: list[tuple[int, int]] = []
         self.elevator_heights: dict[tuple[int, int], int] = {}
 
-        # Scan map for lights and elevators
+        # Scan transformed map for lights and elevators
         for x in range(self.map_width):
             for y in range(self.map_height):
                 tile = self.map_data[x][y]

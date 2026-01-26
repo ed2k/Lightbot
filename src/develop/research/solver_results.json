@@ -1,0 +1,252 @@
+[
+  {
+    "level": 0,
+    "gold": 3,
+    "silver": 4,
+    "bronze": 5,
+    "light_count": 1,
+    "light_positions": [
+      [
+        4,
+        3
+      ]
+    ],
+    "ids": {
+      "solution": "[walk, walk, light]",
+      "size": 3,
+      "verified": true
+    },
+    "procedure": {
+      "main": "[walk, walk, light]",
+      "proc1": "",
+      "proc2": "",
+      "size": 3,
+      "verified": true,
+      "exec_steps": 3
+    }
+  },
+  {
+    "level": 1,
+    "gold": 5,
+    "silver": 7,
+    "bronze": 11,
+    "light_count": 3,
+    "light_positions": [
+      [
+        2,
+        1
+      ],
+      [
+        6,
+        1
+      ],
+      [
+        6,
+        5
+      ]
+    ],
+    "ids": null,
+    "procedure": null
+  },
+  {
+    "level": 2,
+    "gold": 6,
+    "silver": 8,
+    "bronze": 11,
+    "light_count": 1,
+    "light_positions": [
+      [
+        4,
+        1
+      ]
+    ],
+    "ids": null,
+    "procedure": null
+  },
+  {
+    "level": 3,
+    "gold": 4,
+    "silver": 5,
+    "bronze": 6,
+    "light_count": 1,
+    "light_positions": [
+      [
+        4,
+        3
+      ]
+    ],
+    "ids": {
+      "solution": "[walk, jump, jump, walk, light]",
+      "size": 5,
+      "verified": true
+    },
+    "procedure": {
+      "main": "[walk, jump, jump, walk, light]",
+      "proc1": "",
+      "proc2": "",
+      "size": 5,
+      "verified": true,
+      "exec_steps": 5
+    }
+  },
+  {
+    "level": 4,
+    "gold": 7,
+    "silver": 8,
+    "bronze": 11,
+    "light_count": 1,
+    "light_positions": [
+      [
+        5,
+        0
+      ]
+    ],
+    "ids": null,
+    "procedure": null
+  },
+  {
+    "level": 5,
+    "gold": 7,
+    "silver": 10,
+    "bronze": 13,
+    "light_count": 1,
+    "light_positions": [
+      [
+        6,
+        4
+      ]
+    ],
+    "ids": null,
+    "procedure": null
+  },
+  {
+    "level": 6,
+    "gold": 10,
+    "silver": 17,
+    "bronze": 22,
+    "light_count": 3,
+    "light_positions": [
+      [
+        1,
+        2
+      ],
+      [
+        4,
+        3
+      ],
+      [
+        7,
+        2
+      ]
+    ],
+    "ids": null,
+    "procedure": null
+  },
+  {
+    "level": 7,
+    "gold": 16,
+    "silver": 25,
+    "bronze": 26,
+    "light_count": 2,
+    "light_positions": [
+      [
+        3,
+        7
+      ],
+      [
+        4,
+        0
+      ]
+    ],
+    "ids": null,
+    "procedure": null
+  },
+  {
+    "level": 8,
+    "gold": 3,
+    "silver": 14,
+    "bronze": 15,
+    "light_count": 7,
+    "light_positions": [
+      [
+        4,
+        0
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        4,
+        2
+      ],
+      [
+        4,
+        3
+      ],
+      [
+        4,
+        4
+      ],
+      [
+        4,
+        5
+      ],
+      [
+        4,
+        6
+      ]
+    ],
+    "ids": null,
+    "procedure": {
+      "main": "[proc1]",
+      "proc1": "[walk, light, proc1]",
+      "proc2": "",
+      "size": 4,
+      "verified": true,
+      "exec_steps": 21
+    }
+  },
+  {
+    "level": 9,
+    "gold": 3,
+    "silver": 7,
+    "bronze": 13,
+    "light_count": 6,
+    "light_positions": [
+      [
+        4,
+        0
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        4,
+        2
+      ],
+      [
+        4,
+        4
+      ],
+      [
+        4,
+        5
+      ],
+      [
+        4,
+        6
+      ]
+    ],
+    "ids": null,
+    "procedure": {
+      "main": "[proc1]",
+      "proc1": "[jump, light, proc1]",
+      "proc2": "",
+      "size": 4,
+      "verified": true,
+      "exec_steps": 21
+    }
+  }
+]

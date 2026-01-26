@@ -1,0 +1,12 @@
+{
+  "level": 5,
+  "current_size": 7,
+  "current_main_size": 3,
+  "current_p1_size": 2,
+  "current_p2_size": 2,
+  "programs_tested": 3150000,
+  "time_spent": 3843.8105437755585,
+  "main_index": 48,
+  "p1_index": 42,
+  "p2_index": 46
+}

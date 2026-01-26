@@ -37,6 +37,10 @@ var canvasView = function(canvas) {
     for (var i = 0; i < instructionsToSkip; i++) {
       if (lightBot.bot.isInExecutionMode() && lightBot.bot.hasNextInstruction()) {
         lightBot.bot.executeNextInstruction();
+        // check end condition after each skipped instruction
+        if (lightBot.map.ready() && lightBot.map.state.check(lightBot.map.state.allLightsOn)) {
+          break;
+        }
       }
     }
     // check if we can execute the next bot instruction here?

@@ -13,6 +13,9 @@ var canvasView = function(canvas) {
   // speed multiplier for fast run
   lightBot.speedMultiplier = 1;
 
+  // skip count - number of instructions to execute per frame
+  lightBot.skipCount = 1;
+
   // distance between lowest point in the map and the bottom edge
   var offsetY = 50;
 
@@ -29,6 +32,13 @@ var canvasView = function(canvas) {
   };
 
   function update() {
+    // execute multiple instructions per frame based on skipCount
+    var instructionsToSkip = (lightBot.skipCount || 1) - 1;
+    for (var i = 0; i < instructionsToSkip; i++) {
+      if (lightBot.bot.isInExecutionMode() && lightBot.bot.hasNextInstruction()) {
+        lightBot.bot.executeNextInstruction();
+      }
+    }
     // check if we can execute the next bot instruction here?
     if (lightBot.bot.isInExecutionMode() && lightBot.bot.isReadyForNextInstruction() && lightBot.bot.hasNextInstruction()) {
       var oldPos = $.extend({}, lightBot.bot.currentPos); // copy old position

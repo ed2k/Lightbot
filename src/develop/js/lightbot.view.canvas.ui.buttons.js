@@ -88,6 +88,7 @@ $(document).ready(function() {
       $(this).button('option', {label: 'Run', icons: {primary: 'ui-icon-play'}}).removeClass('ui-state-highlight');
       $('#fastRunButton').button('option', {label: 'Fast', icons: {primary: 'ui-icon-seek-end'}}).removeClass('ui-state-highlight');
       lightBot.speedMultiplier = 1;
+      lightBot.skipCount = 1;
     } else {
       var instructions = lightBot.ui.editor.getInstructions($('#programContainer > div > ul > li'));
       var procOne = lightBot.ui.editor.getInstructions($('#procOneContainer > div > ul > li'));
@@ -97,6 +98,7 @@ $(document).ready(function() {
 
       $(this).button('option', {label: 'Stop', icons: {primary: 'ui-icon-stop'}}).addClass('ui-state-highlight');
       lightBot.speedMultiplier = 1;
+      lightBot.skipCount = 1;
     }
   });
 
@@ -113,6 +115,7 @@ $(document).ready(function() {
       $(this).button('option', {label: 'Fast', icons: {primary: 'ui-icon-seek-end'}}).removeClass('ui-state-highlight');
       $('#runButton').button('option', {label: 'Run', icons: {primary: 'ui-icon-play'}}).removeClass('ui-state-highlight');
       lightBot.speedMultiplier = 1;
+      lightBot.skipCount = 1;
     } else {
       var instructions = lightBot.ui.editor.getInstructions($('#programContainer > div > ul > li'));
       var procOne = lightBot.ui.editor.getInstructions($('#procOneContainer > div > ul > li'));
@@ -121,7 +124,8 @@ $(document).ready(function() {
       lightBot.bot.execute();
 
       $(this).button('option', {label: 'Stop', icons: {primary: 'ui-icon-stop'}}).addClass('ui-state-highlight');
-      lightBot.speedMultiplier = 401;
+      lightBot.speedMultiplier = 20;
+      lightBot.skipCount = 401; // skip instructions per frame
     }
   });
 

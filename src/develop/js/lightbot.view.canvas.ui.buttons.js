@@ -1,6 +1,9 @@
 /*jsl:option explicit*/
 /*jsl:import lightbot.model.game.js*/
 
+// Save map state before running to restore on stop
+var mapStateBeforeRun = null;
+
 $(document).ready(function() {
 
   // show help screen button
@@ -85,11 +88,20 @@ $(document).ready(function() {
       // reset the map (resets the bot as well)
       lightBot.map.reset();
 
+      // restore map state from before run (undo any map edits)
+      if (mapStateBeforeRun) {
+        lightBot.map.loadMapState(mapStateBeforeRun);
+        lightBot.draw();
+      }
+
       $(this).button('option', {label: 'Run', icons: {primary: 'ui-icon-play'}}).removeClass('ui-state-highlight');
       $('#fastRunButton').button('option', {label: 'Fast', icons: {primary: 'ui-icon-seek-end'}}).removeClass('ui-state-highlight');
       lightBot.speedMultiplier = 1;
       lightBot.skipCount = 1;
     } else {
+      // save current map state before running
+      mapStateBeforeRun = lightBot.map.getCurrentMapState();
+
       var instructions = lightBot.ui.editor.getInstructions($('#programContainer > div > ul > li'));
       var procOne = lightBot.ui.editor.getInstructions($('#procOneContainer > div > ul > li'));
       var procTwo = lightBot.ui.editor.getInstructions($('#procTwoContainer > div > ul > li'));
@@ -112,11 +124,20 @@ $(document).ready(function() {
       // reset the map (resets the bot as well)
       lightBot.map.reset();
 
+      // restore map state from before run (undo any map edits)
+      if (mapStateBeforeRun) {
+        lightBot.map.loadMapState(mapStateBeforeRun);
+        lightBot.draw();
+      }
+
       $(this).button('option', {label: 'Fast', icons: {primary: 'ui-icon-seek-end'}}).removeClass('ui-state-highlight');
       $('#runButton').button('option', {label: 'Run', icons: {primary: 'ui-icon-play'}}).removeClass('ui-state-highlight');
       lightBot.speedMultiplier = 1;
       lightBot.skipCount = 1;
     } else {
+      // save current map state before running
+      mapStateBeforeRun = lightBot.map.getCurrentMapState();
+
       var instructions = lightBot.ui.editor.getInstructions($('#programContainer > div > ul > li'));
       var procOne = lightBot.ui.editor.getInstructions($('#procOneContainer > div > ul > li'));
       var procTwo = lightBot.ui.editor.getInstructions($('#procTwoContainer > div > ul > li'));

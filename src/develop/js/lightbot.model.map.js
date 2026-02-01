@@ -93,6 +93,13 @@
       if (nbrLights === 0) {
         console.error('No light defined in map');
       }
+
+      // Check for saved modified map in localStorage and apply it
+      var savedMap = map.loadModifiedMap(x);
+      if (savedMap) {
+        console.log('Found saved modified map for level ' + x + ', applying...');
+        map.loadMapState(savedMap);
+      }
     }
   };
 
@@ -128,6 +135,64 @@
 
   map.getNbrOfLevels = function() {
     return maps.length;
+  };
+
+  // localStorage functions for modified maps
+  map.getStorageKey = function(level) {
+    return 'lightbot_modified_map_' + level;
+  };
+
+  map.saveModifiedMap = function() {
+    if (levelNumber === null) {
+      console.log('No level loaded, cannot save');
+      return false;
+    }
+
+    var state = map.getCurrentMapState();
+    if (!state) {
+      console.log('Cannot get current map state');
+      return false;
+    }
+
+    var key = map.getStorageKey(levelNumber);
+    try {
+      localStorage.setItem(key, JSON.stringify(state));
+      console.log('Saved modified map for level ' + levelNumber);
+      return true;
+    } catch (e) {
+      console.error('Failed to save map to localStorage:', e);
+      return false;
+    }
+  };
+
+  map.loadModifiedMap = function(level) {
+    var key = map.getStorageKey(level);
+    try {
+      var saved = localStorage.getItem(key);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error('Failed to load map from localStorage:', e);
+    }
+    return null;
+  };
+
+  map.clearModifiedMap = function(level) {
+    var key = map.getStorageKey(level);
+    try {
+      localStorage.removeItem(key);
+      console.log('Cleared modified map for level ' + level);
+      return true;
+    } catch (e) {
+      console.error('Failed to clear map from localStorage:', e);
+      return false;
+    }
+  };
+
+  map.hasModifiedMap = function(level) {
+    var key = map.getStorageKey(level);
+    return localStorage.getItem(key) !== null;
   };
 
   map.complete = function() {

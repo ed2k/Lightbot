@@ -52,6 +52,9 @@
       editorButton.textContent = 'Map Editor';
       editorButton.style.background = '#FF9800';
 
+      // Save modified map to localStorage
+      lightBot.map.saveModifiedMap();
+
       // Clear selection
       clearBlockSelection();
 
@@ -272,6 +275,12 @@
 
     // Restore original map state
     lightBot.map.loadMapState(originalMapState);
+
+    // Clear saved modified map from localStorage
+    var levelNumber = lightBot.map.getLevelNumber();
+    if (levelNumber !== null) {
+      lightBot.map.clearModifiedMap(levelNumber);
+    }
 
     // Redraw canvas
     lightBot.draw();

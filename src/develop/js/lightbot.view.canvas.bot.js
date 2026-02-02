@@ -146,6 +146,10 @@
     return readyForNextInstruction;
   }
 
+  function forceReady() {
+    readyForNextInstruction = true;
+  }
+
   lightBot.bot.animate = animate;
   lightBot.bot.step = step;
   lightBot.bot.draw = draw;
@@ -155,4 +159,5 @@
   lightBot.bot.getMovement = getMovement;
   lightBot.bot.setMovement = setMovement;
   lightBot.bot.isReadyForNextInstruction = isReadyForNextInstruction;
+  lightBot.bot.forceReady = forceReady;
 })();

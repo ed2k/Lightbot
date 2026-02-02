@@ -43,6 +43,13 @@ var canvasView = function(canvas) {
         }
       }
     }
+    // After skipping instructions, reset animation state so bot is drawn at correct position
+    // and lights/elevators reflect their current state
+    if (instructionsToSkip > 0) {
+      lightBot.bot.setAnimation(lightBot.bot.animations.stand);
+      lightBot.bot.setMovement(0, 0, 0);
+      lightBot.bot.forceReady();
+    }
     // check if we can execute the next bot instruction here?
     if (lightBot.bot.isInExecutionMode() && lightBot.bot.isReadyForNextInstruction() && lightBot.bot.hasNextInstruction()) {
       var oldPos = $.extend({}, lightBot.bot.currentPos); // copy old position

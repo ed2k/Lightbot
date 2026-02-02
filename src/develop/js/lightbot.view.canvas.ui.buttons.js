@@ -96,6 +96,7 @@ $(document).ready(function() {
 
       $(this).button('option', {label: 'Run', icons: {primary: 'ui-icon-play'}}).removeClass('ui-state-highlight');
       $('#fastRunButton').button('option', {label: 'Fast', icons: {primary: 'ui-icon-seek-end'}}).removeClass('ui-state-highlight');
+      $('#fastestRunButton').button('option', {label: 'Fastest', icons: {primary: 'ui-icon-arrowthickstop-1-e'}}).removeClass('ui-state-highlight');
       lightBot.speedMultiplier = 1;
       lightBot.skipCount = 1;
     } else {
@@ -132,6 +133,44 @@ $(document).ready(function() {
 
       $(this).button('option', {label: 'Fast', icons: {primary: 'ui-icon-seek-end'}}).removeClass('ui-state-highlight');
       $('#runButton').button('option', {label: 'Run', icons: {primary: 'ui-icon-play'}}).removeClass('ui-state-highlight');
+      $('#fastestRunButton').button('option', {label: 'Fastest', icons: {primary: 'ui-icon-arrowthickstop-1-e'}}).removeClass('ui-state-highlight');
+      lightBot.speedMultiplier = 1;
+      lightBot.skipCount = 1;
+    } else {
+      // save current map state before running
+      mapStateBeforeRun = lightBot.map.getCurrentMapState();
+
+      var instructions = lightBot.ui.editor.getInstructions($('#programContainer > div > ul > li'));
+      var procOne = lightBot.ui.editor.getInstructions($('#procOneContainer > div > ul > li'));
+      var procTwo = lightBot.ui.editor.getInstructions($('#procTwoContainer > div > ul > li'));
+      lightBot.bot.queueInstructions(instructions, procOne, procTwo);
+      lightBot.bot.execute();
+
+      $(this).button('option', {label: 'Stop', icons: {primary: 'ui-icon-stop'}}).addClass('ui-state-highlight');
+      lightBot.speedMultiplier = 10;
+      lightBot.skipCount = 13; // skip instructions per frame
+    }
+  });
+
+  // fastest run program button
+  $('#fastestRunButton').button({
+    icons: {
+      primary: "ui-icon-arrowthickstop-1-e"
+    }
+  }).click(function() {
+    if (lightBot.bot.isInExecutionMode()) {
+      // reset the map (resets the bot as well)
+      lightBot.map.reset();
+
+      // restore map state from before run (undo any map edits)
+      if (mapStateBeforeRun) {
+        lightBot.map.loadMapState(mapStateBeforeRun);
+        lightBot.draw();
+      }
+
+      $(this).button('option', {label: 'Fastest', icons: {primary: 'ui-icon-arrowthickstop-1-e'}}).removeClass('ui-state-highlight');
+      $('#runButton').button('option', {label: 'Run', icons: {primary: 'ui-icon-play'}}).removeClass('ui-state-highlight');
+      $('#fastRunButton').button('option', {label: 'Fast', icons: {primary: 'ui-icon-seek-end'}}).removeClass('ui-state-highlight');
       lightBot.speedMultiplier = 1;
       lightBot.skipCount = 1;
     } else {
@@ -146,7 +185,7 @@ $(document).ready(function() {
 
       $(this).button('option', {label: 'Stop', icons: {primary: 'ui-icon-stop'}}).addClass('ui-state-highlight');
       lightBot.speedMultiplier = 20;
-      lightBot.skipCount = 401; // skip instructions per frame
+      lightBot.skipCount = 401; // skip many more instructions per frame
     }
   });
 

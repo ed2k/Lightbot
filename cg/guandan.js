@@ -846,15 +846,14 @@ function addHintButton() {
     // Check if hint button already exists
     if (document.getElementById('hint-btn')) return;
     
-    const controls = document.querySelector('.controls') || document.body;
+    const controls = document.getElementById('controls-area') || document.body;
     
     const hintBtn = document.createElement('button');
     hintBtn.id = 'hint-btn';
     hintBtn.textContent = '💡 Get Hint';
-    hintBtn.className = 'btn hint-btn';
+    hintBtn.className = 'action-button hint-btn';
     hintBtn.style.cssText = `
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        margin-left: 10px;
         animation: pulse 2s infinite;
     `;
     
@@ -868,10 +867,11 @@ function addHintButton() {
     hintArea.style.cssText = `
         margin-top: 20px;
         padding: 15px;
-        background: rgba(102, 126, 234, 0.1);
+        background: rgba(102, 126, 234, 0.15);
         border-left: 4px solid #667eea;
         border-radius: 8px;
         font-size: 14px;
+        color: white;
     `;
     controls.parentElement.appendChild(hintArea);
     
@@ -885,7 +885,7 @@ function addHintButton() {
                 50% { transform: scale(1.05); box-shadow: 0 6px 12px rgba(102, 126, 234, 0.5); }
             }
             .hint-area.hidden { display: none; }
-            .hint-area h4 { margin: 0 0 10px 0; color: #667eea; }
+            .hint-area h4 { margin: 0 0 10px 0; color: #a3b8ff; }
             .hint-area p { margin: 5px 0; }
             .hint-cards { 
                 display: flex; 

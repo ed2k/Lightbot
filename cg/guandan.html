@@ -52,7 +52,14 @@
             align-items: center;
             gap: 10px;
         }
-        .player-area.south { bottom: 10px; left: 50%; transform: translateX(-50%); }
+        .player-area.south {
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+        }
+        .player-area.south .hand {
+            max-width: 100%;
+        }
         .player-area.north { top: 10px; left: 50%; transform: translateX(-50%); }
         .player-area.east { right: 10px; top: 50%; transform: translateY(-50%); }
         .player-area.west { left: 10px; top: 50%; transform: translateY(-50%); }
@@ -364,6 +371,11 @@
             }
             .player-area.west {
                 left: 5px;
+            }
+            .player-area.south {
+                left: 5px;
+                right: 5px;
+                bottom: 5px;
             }
             .player-play-area.south {
                 bottom: 80px;

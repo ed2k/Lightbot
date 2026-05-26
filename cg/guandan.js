@@ -2,8 +2,8 @@ class GuandanGame {
     constructor() {
         this.suits = ['♠', '♥', '♣', '♦'];
         this.ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-        this.players = ['South', 'West', 'North', 'East'];
-        this.hands = { South: [], West: [], North: [], East: [] };
+        this.players = ['South', 'East', 'North', 'West'];
+        this.hands = { South: [], East: [], North: [], West: [] };
         this.currentPlayer = 0;
         this.selectedCards = [];
         this.lastPlay = null;
@@ -12,7 +12,7 @@ class GuandanGame {
         this.currentLevel = 'A'; // Current level being played
         this.teamLevels = { NS: 'A', EW: 'A' }; // Team levels
         this.finishOrder = []; // Track who finishes first, second, etc.
-        this.currentRoundPlays = { South: null, West: null, North: null, East: null }; // Track all plays in current round
+        this.currentRoundPlays = { South: null, East: null, North: null, West: null }; // Track all plays in current round
         
         this.initGame();
     }
@@ -54,9 +54,9 @@ class GuandanGame {
 
         // Deal 27 cards to each player
         this.hands.South = deck.slice(0, 27).sort((a, b) => this.compareCards(a, b));
-        this.hands.West = deck.slice(27, 54).sort((a, b) => this.compareCards(a, b));
+        this.hands.East = deck.slice(27, 54).sort((a, b) => this.compareCards(a, b));
         this.hands.North = deck.slice(54, 81).sort((a, b) => this.compareCards(a, b));
-        this.hands.East = deck.slice(81, 108).sort((a, b) => this.compareCards(a, b));
+        this.hands.West = deck.slice(81, 108).sort((a, b) => this.compareCards(a, b));
     }
 
     compareCards(a, b) {
@@ -96,7 +96,7 @@ class GuandanGame {
 
     getRotatedPositions() {
         // Rotate so current player is always at South position
-        const positions = ['south', 'west', 'north', 'east'];
+        const positions = ['south', 'east', 'north', 'west'];
         const rotated = [];
         for (let i = 0; i < 4; i++) {
             const playerIndex = (this.currentPlayer + i) % 4;
@@ -107,7 +107,7 @@ class GuandanGame {
 
     renderHands() {
         const rotatedPlayers = this.getRotatedPositions();
-        const positions = ['south', 'west', 'north', 'east'];
+        const positions = ['south', 'east', 'north', 'west'];
         
         for (let i = 0; i < positions.length; i++) {
             const position = positions[i];
@@ -311,7 +311,7 @@ class GuandanGame {
             this.lastPlay = null;
             this.lastPlayer = null;
             this.passCount = 0;
-            this.currentRoundPlays = { South: null, West: null, North: null, East: null };
+            this.currentRoundPlays = { South: null, East: null, North: null, West: null };
             this.clearAllPlayAreas();
             this.updatePlayInfo(`${this.players[this.currentPlayer]} wins the round! Play any combination.`);
             this.updateActivePlayer();
@@ -378,7 +378,7 @@ class GuandanGame {
         
         // Get rotated positions
         const rotatedPlayers = this.getRotatedPositions();
-        const positions = ['south', 'west', 'north', 'east'];
+        const positions = ['south', 'east', 'north', 'west'];
         
         // Render each player's cards at their current rotated position
         for (let i = 0; i < this.players.length; i++) {
@@ -412,7 +412,7 @@ class GuandanGame {
     }
 
     clearAllPlayAreas() {
-        const positions = ['south', 'west', 'north', 'east'];
+        const positions = ['south', 'east', 'north', 'west'];
         for (let position of positions) {
             const playArea = document.getElementById(`play-${position}`);
             playArea.innerHTML = '';
@@ -430,7 +430,7 @@ class GuandanGame {
 
     updateActivePlayer() {
         // Always highlight South position since that's where current player is shown
-        const positions = ['south', 'west', 'north', 'east'];
+        const positions = ['south', 'east', 'north', 'west'];
         for (let position of positions) {
             const nameElement = document.getElementById(`name-${position}`);
             if (position === 'south') {
@@ -452,14 +452,14 @@ class GuandanGame {
     }
 
     newGame() {
-        this.hands = { South: [], West: [], North: [], East: [] };
+        this.hands = { South: [], East: [], North: [], West: [] };
         this.currentPlayer = 0;
         this.selectedCards = [];
         this.lastPlay = null;
         this.lastPlayer = null;
         this.passCount = 0;
         this.finishOrder = [];
-        this.currentRoundPlays = { South: null, West: null, North: null, East: null };
+        this.currentRoundPlays = { South: null, East: null, North: null, West: null };
         
         document.getElementById('message').classList.add('hidden');
         document.getElementById('last-play').innerHTML = '';
@@ -953,11 +953,49 @@ function showHint() {
         `;
     }
     
+    // Trigger Split Cards Algorithm
+    try {
+        const rawCards = hand.map(card => GuandanStrategy.convertCardToRaw(card));
+        const mainRankValue = GuandanStrategy.convertLevelToValue(game.currentLevel);
+        const plans = GuandanStrategy.calc({
+            cards: rawCards,
+            mainRank: mainRankValue,
+            morePlans: true,
+            scorer: 'HEURISTICS'
+        });
+        
+        if (plans && plans.length > 0) {
+            hintHTML += `
+                <hr style="margin: 15px 0; border: none; border-top: 1px solid #667eea;">
+                <h4 style="margin-bottom: 10px; color: #fbbf24;">🃏 Split Hand Candidates (Top ${Math.min(plans.length, 3)})</h4>
+            `;
+            
+            const numToShow = Math.min(plans.length, 3);
+            for (let i = 0; i < numToShow; i++) {
+                hintHTML += `
+                    <div style="margin-top: 12px; background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(102, 126, 234, 0.3);">
+                        <div style="font-weight: bold; color: #a3b8ff; margin-bottom: 8px; font-size: 13px; display: flex; justify-content: space-between;">
+                            <span>Candidate Plan #${i + 1}</span>
+                            <span style="font-size: 12px; color: #fbbf24;">Score: ${plans[i].score.toFixed(1)}</span>
+                        </div>
+                        ${formatSplitPlan(plans[i])}
+                    </div>
+                `;
+            }
+        }
+    } catch (e) {
+        console.error("Strategy solver error:", e);
+        hintHTML += `
+            <hr style="margin: 15px 0; border: none; border-top: 1px solid #667eea;">
+            <p style="color: #ef4444;">Could not run split cards solver: ${e.message}</p>
+        `;
+    }
+    
     // Show combo breakdown
     if (Object.keys(analysis.comboTypes).length > 0) {
         hintHTML += `
-            <hr style="margin: 10px 0; border: none; border-top: 1px solid #667eea;">
-            <p><strong>📋 Your Hand Analysis:</strong></p>
+            <hr style="margin: 15px 0; border: none; border-top: 1px solid #667eea;">
+            <p><strong>📋 Heuristic Combo Breakdown:</strong></p>
             <ul style="margin: 5px 0; padding-left: 20px;">
         `;
         for (const [type, count] of Object.entries(analysis.comboTypes)) {
@@ -973,6 +1011,49 @@ function showHint() {
     if (hint.action === 'play' && hint.move) {
         highlightSuggestedCards(hint.move.cards);
     }
+}
+
+function formatSplitPlan(plan) {
+    const sortedPlays = [...plan.plays].sort((a, b) => a.playRank.type - b.playRank.type);
+    
+    const suitSymbolMap = { 'S': '♠', 'H': '♥', 'C': '♣', 'D': '♦', 'R': 'Joker', 'B': 'joker' };
+    const rankLabelMap = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K', 14: 'B-Joker', 15: 'R-Joker' };
+    
+    return sortedPlays.map(play => {
+        const comboName = getPlayTypeName(play.playRank.type);
+        const cardsText = play.cards.map(c => {
+            const isRed = (c.suit === 'H' || c.suit === 'D' || c.suit === 'R');
+            const suitText = suitSymbolMap[c.suit] || c.suit;
+            const rankText = rankLabelMap[c.rank.natural] || c.rank.natural;
+            
+            if (c.suit === 'R' || c.suit === 'B') {
+                return `<span style="color: ${isRed ? '#dc2626' : '#111827'}; font-weight: bold; background: white; padding: 2px 5px; border: 1px solid #ccc; border-radius: 3px; font-size: 11px; margin: 0 1px;">${c.suit === 'R' ? 'Red Joker' : 'Black Joker'}</span>`;
+            }
+            
+            return `<span style="color: ${isRed ? '#dc2626' : '#111827'}; font-weight: bold; background: white; padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 11px; margin: 0 1px;">${rankText}${suitText}</span>`;
+        }).join(' ');
+        
+        return `<div style="margin: 6px 0; display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap;">
+            <strong style="color: #a3b8ff; min-width: 90px; display: inline-block; font-size: 12px; margin-top: 2px;">${comboName}:</strong>
+            <span style="display: flex; flex-wrap: wrap; gap: 2px;">${cardsText}</span>
+        </div>`;
+    }).join('');
+}
+
+function getPlayTypeName(type) {
+    const names = {
+        1: 'Single',
+        2: 'Pair',
+        3: 'Triple',
+        4: 'Full House',
+        5: 'Straight',
+        6: 'Tube',
+        7: 'Plate',
+        8: 'Straight Flush',
+        9: 'Bomb',
+        10: 'Joker Bomb'
+    };
+    return names[type] || 'Combo';
 }
 
 function highlightSuggestedCards(cards) {

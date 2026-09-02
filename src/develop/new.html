@@ -1797,6 +1797,8 @@
             const gameScreen = document.getElementById('game-screen');
             const toggleBtn = document.getElementById('toggle-map-editor');
 
+            const creditsEl = document.getElementById('credits') || document.querySelector('.credits') || document.getElementById('credits2');
+
             if (this.mapEditorMode) {
                 // Save original level data for reset
                 this.originalLevelData = JSON.parse(JSON.stringify(this.levelData));
@@ -1804,6 +1806,7 @@
                 // Show map editor, hide game screen
                 editorScreen.style.display = 'block';
                 gameScreen.style.display = 'none';
+                if (creditsEl) creditsEl.style.display = 'none';
                 toggleBtn.textContent = '🎮 Back to Game';
                 toggleBtn.style.background = '#4CAF50';
 
@@ -1813,6 +1816,7 @@
                 // Hide map editor, show game screen
                 editorScreen.style.display = 'none';
                 gameScreen.style.display = 'block';
+                if (creditsEl) creditsEl.style.display = '';
                 toggleBtn.textContent = '🗺️ Map Editor';
                 toggleBtn.style.background = '#FF9800';
 

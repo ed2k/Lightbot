@@ -37,6 +37,8 @@
       // Show editor, hide game (using jQuery like the rest of the app)
       $(gameScreen).hide();
       $(editorScreen).show();
+      $('#lightbot').addClass('map-editor-active');
+      $('#credits, #credits2').hide();
       editorButton.textContent = 'Back to Game';
       editorButton.style.background = '#4CAF50';
 
@@ -49,6 +51,8 @@
       // Hide editor, show game
       $(editorScreen).hide();
       $(gameScreen).show();
+      $('#lightbot').removeClass('map-editor-active');
+      $('#credits, #credits2').show();
       editorButton.textContent = 'Map Editor';
       editorButton.style.background = '#FF9800';
 

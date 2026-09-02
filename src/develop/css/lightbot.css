@@ -219,6 +219,11 @@ a:hover {
   text-align: center;
 }
 
+#lightbot.map-editor-active #credits,
+#lightbot.map-editor-active #credits2 {
+  display: none !important;
+}
+
 .ui-screen {
   position: absolute;
   top: 1px;

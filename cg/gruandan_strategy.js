@@ -432,7 +432,14 @@
     return undefined;
   }
 
-  function iteratePlans({ cards, collectPlan, context: gameContext }) {
+  function iteratePlans({
+    cards,
+    collectPlan,
+    context: gameContext,
+    mode,
+    boundFn,
+    searchState,
+  }) {
     const cardsByRank = organize(cards, gameContext);
     iterateImp({
       cardsByRank,
@@ -440,6 +447,9 @@
         collectPlan,
         game: gameContext,
         debug: DEBUG,
+        mode,
+        boundFn,
+        searchState,
       },
     });
   }
@@ -491,6 +501,406 @@
     return undefined;
   }
 
+  // === Leftover Cost Estimation & Decomposition (ported from strategy.cpp) ===
+  // The reference solver evaluates the cards left after the extracted hands
+  // with an admissible lower bound instead of counting them as singles.
+
+  function wildCardsLeft(cardsByRank) {
+    return (cardsByRank[WILD_CARD] || []).length;
+  }
+
+  // Port of calculateMinHandsImp: min hands for cnt1 single-ranks, cnt2
+  // pair-ranks and cnt3 triple-ranks, spending wild cards to merge groups
+  // (single->pair, pair->triple, triple->bomb, or the wild played alone).
+  // Jokers and bombs are treated as ~free hands: they can almost always be
+  // played, exactly like the reference implementation.
+  function minHandsImp(cnt1, cnt2, cnt3, wilds) {
+    if (wilds <= 0) {
+      return cnt1 + Math.max(cnt2, cnt3);
+    }
+    let best = Infinity;
+    if (cnt1 > 0) {
+      best = Math.min(best, minHandsImp(cnt1 - 1, cnt2 + 1, cnt3, wilds - 1));
+    }
+    if (cnt2 > 0) {
+      best = Math.min(best, minHandsImp(cnt1, cnt2 - 1, cnt3 + 1, wilds - 1));
+    }
+    if (cnt3 > 0) {
+      best = Math.min(best, minHandsImp(cnt1, cnt2, cnt3 - 1, wilds - 1));
+    }
+    best = Math.min(best, minHandsImp(cnt1 + 1, cnt2, cnt3, wilds - 1));
+    return best;
+  }
+
+  // Port of calculateMinHands: lower bound on the hands needed by the cards
+  // that are still in cardsByRank (wild cards included).
+  function minHandsLowerBound(cardsByRank) {
+    let cnt1 = 0;
+    let cnt2 = 0;
+    let cnt3 = 0;
+    for (const key of Object.keys(cardsByRank)) {
+      const cards = cardsByRank[key];
+      if (!cards || cards.length === 0) {
+        continue;
+      }
+      const rank = Number(key);
+      if (rank === BLACK_JOKER || rank === RED_JOKER) {
+        continue; // jokers are ~free hands
+      }
+      if (cards.length >= 4) {
+        continue; // bombs are ~free hands
+      }
+      if (cards.length === 1) {
+        cnt1++;
+      } else if (cards.length === 2) {
+        cnt2++;
+      } else {
+        cnt3++;
+      }
+    }
+    return minHandsImp(cnt1, cnt2, cnt3, wildCardsLeft(cardsByRank));
+  }
+
+  // Port of OverallValueCostEstimator.estimate: value of a single play in
+  // [-2, 2]. Dumping strong cards has negative cost, getting stuck with low
+  // cards has positive cost. `order` is the context order (0..14),
+  // `naturalRank` the natural top rank of sequences (1=A .. 14=A-ordinal).
+  function overallValuePlay(type, order, count, naturalRank) {
+    switch (type) {
+      case PlayType.SINGLE:
+        switch (order) {
+          case 14: // red joker
+            return -1.0;
+          case 13: // black joker
+            return -0.2;
+          case 12: // main rank
+            return -0.1;
+          default:
+            return linear({ x: 0, y: 1.3 }, { x: 11, y: 0.0 }, order);
+        }
+      case PlayType.PAIR:
+        switch (order) {
+          case 14:
+            return -1.0;
+          case 13:
+            return -0.9;
+          case 12:
+            return -0.8;
+          case 11:
+            return -0.5;
+          default:
+            return linear({ x: 0, y: 1.0 }, { x: 10, y: -0.1 }, order);
+        }
+      // ASSUMPTION (kept from the reference): triples and full houses are
+      // equivalent.
+      case PlayType.TRIPLE:
+      case PlayType.FULL_HOUSE:
+        switch (order) {
+          case 12:
+            return -0.9;
+          case 11:
+            return -0.8;
+          case 10:
+            return -0.6;
+          default:
+            return linear({ x: 0, y: 1.0 }, { x: 9, y: -0.3 }, order);
+        }
+      case PlayType.STRAIGHT:
+        return 0.6 * linear({ x: 1, y: 1.0 }, { x: 10, y: -1.0 }, naturalRank);
+      case PlayType.TUBE:
+        return 0.4 * linear({ x: 1, y: 1.0 }, { x: 12, y: -1.0 }, naturalRank);
+      case PlayType.PLATE:
+        return 0.3 * linear({ x: 1, y: 1.0 }, { x: 13, y: -1.0 }, naturalRank);
+      case PlayType.BOMB_N_TUPLE:
+        return count >= 6
+          ? -1.9
+          : count === 5
+          ? linear({ x: 0, y: -1.5 }, { x: 12, y: -1.7 }, order)
+          : linear({ x: 0, y: -1.0 }, { x: 12, y: -1.3 }, order);
+      case PlayType.STRAIGHT_FLUSH:
+        return linear({ x: 5, y: -1.3 }, { x: 14, y: -1.5 }, naturalRank);
+      case PlayType.FOUR_JOKER:
+        return -2.0;
+      default:
+        return 0;
+    }
+  }
+
+  // Port of OverallValueCostEstimator.estimateCardsImp for wilds == 0:
+  // per-rank value of the remaining cards. Positive-value pairs are absorbed
+  // into triples (they ride along as full houses); strong (negative) pairs
+  // are kept separate.
+  function overallValueOfCounts(counts, context) {
+    let pairsInFullhouses = 0;
+    let valueSum = 0.0;
+    for (let rank = 1; rank <= K; ++rank) {
+      if (counts[rank] === 3) {
+        pairsInFullhouses++;
+        valueSum += overallValuePlay(
+          PlayType.TRIPLE,
+          context.getOrder(rank),
+          3,
+          rank
+        );
+      }
+    }
+    for (let rank = 1; rank <= K; ++rank) {
+      const n = counts[rank] || 0;
+      if (n === 1) {
+        valueSum += overallValuePlay(
+          PlayType.SINGLE,
+          context.getOrder(rank),
+          1,
+          rank
+        );
+      } else if (n === 2) {
+        const value = overallValuePlay(
+          PlayType.PAIR,
+          context.getOrder(rank),
+          2,
+          rank
+        );
+        if (value > 0 && pairsInFullhouses > 0) {
+          pairsInFullhouses--;
+        } else {
+          valueSum += value;
+        }
+      } else if (n >= 4) {
+        valueSum += overallValuePlay(
+          PlayType.BOMB_N_TUPLE,
+          context.getOrder(rank),
+          n,
+          rank
+        );
+      }
+    }
+    valueSum +=
+      (counts[BLACK_JOKER] || 0) *
+      overallValuePlay(PlayType.SINGLE, 13, 1, BLACK_JOKER);
+    valueSum +=
+      (counts[RED_JOKER] || 0) *
+      overallValuePlay(PlayType.SINGLE, 14, 1, RED_JOKER);
+    return valueSum;
+  }
+
+  function overallEstimateCounts(counts, wilds, context) {
+    if (wilds === 0) {
+      return overallValueOfCounts(counts, context);
+    }
+    let best = Infinity;
+    for (let rank = 1; rank <= K; ++rank) {
+      counts[rank] = (counts[rank] || 0) + 1;
+      best = Math.min(best, overallEstimateCounts(counts, wilds - 1, context));
+      counts[rank]--;
+    }
+    return best;
+  }
+
+  // Port of OverallValueCostEstimator.estimateCards: lower bound on the
+  // overall value of the cards still in cardsByRank.
+  function overallLeftoverEstimate(cardsByRank, context) {
+    const counts = {};
+    for (const key of Object.keys(cardsByRank)) {
+      const cards = cardsByRank[key];
+      if (!cards || cards.length === 0) {
+        continue;
+      }
+      counts[Number(key)] = cards.length;
+    }
+    return overallEstimateCounts(counts, wildCardsLeft(cardsByRank), context);
+  }
+
+  // Decompose the leftover cards into concrete plays.
+  // mode 'HANDS'/'HEURISTICS': spend wild cards to minimize the hand count
+  // (pairs ride with triples as full houses). mode 'OVERALL': only absorb
+  // pairs whose value is positive, mirroring overallValueOfCounts so the
+  // leaf cost stays >= the pruning bound.
+  function decomposeLeftover(cardsByRank, context, mode) {
+    const small = [];
+    const bombs = [];
+    const jokers = [];
+    for (const key of Object.keys(cardsByRank)) {
+      const cards = cardsByRank[key];
+      if (!cards || cards.length === 0) {
+        continue;
+      }
+      const rank = Number(key);
+      if (rank === BLACK_JOKER || rank === RED_JOKER) {
+        jokers.push(...cards);
+      } else if (cards.length >= 4) {
+        bombs.push({ rank, cards: [...cards] });
+      } else {
+        small.push({ rank, cards: [...cards] });
+      }
+    }
+    const wilds = [...(cardsByRank[WILD_CARD] || [])];
+
+    // Spend wild cards on small groups to minimize hands (single->pair,
+    // pair->triple, triple->bomb), or play a wild as a single. Returns the
+    // final groups; a wild played alone becomes a rank-less group.
+    function assignWilds(groups, idx) {
+      if (idx >= wilds.length) {
+        let cnt1 = 0;
+        let cnt2 = 0;
+        let cnt3 = 0;
+        for (const g of groups) {
+          if (g.cards.length === 1) cnt1++;
+          else if (g.cards.length === 2) cnt2++;
+          else if (g.cards.length === 3) cnt3++;
+        }
+        return { hands: cnt1 + Math.max(cnt2, cnt3), groups };
+      }
+      let best = null;
+      const consider = (next) => {
+        const rest = assignWilds(next, idx + 1);
+        if (best == null || rest.hands < best.hands) {
+          best = rest;
+        }
+      };
+      for (let i = 0; i < groups.length; i++) {
+        consider(
+          groups.map((g, j) =>
+            j === i ? { rank: g.rank, cards: [...g.cards, wilds[idx]] } : g
+          )
+        );
+      }
+      consider([...groups, { rank: null, cards: [wilds[idx]] }]);
+      return best;
+    }
+
+    const assignment = assignWilds(small, 0);
+    const wildSingles = [];
+    const finalGroups = [];
+    for (const g of assignment.groups) {
+      if (g.rank === null) {
+        wildSingles.push(...g.cards);
+      } else {
+        finalGroups.push(g);
+      }
+    }
+
+    const plays = [];
+    let score = 0;
+    const addPlay = (cards, type, rank, count, naturalRank) => {
+      plays.push({ playRank: { type, rank, count }, cards });
+      if (mode === 'OVERALL') {
+        score += overallValuePlay(type, rank, count, naturalRank);
+      } else if (
+        type !== PlayType.BOMB_N_TUPLE &&
+        type !== PlayType.STRAIGHT_FLUSH &&
+        type !== PlayType.FOUR_JOKER &&
+        !(type === PlayType.SINGLE && cards.every((c) => c.rank.natural >= BLACK_JOKER))
+      ) {
+        score += 1;
+      }
+    };
+
+    for (const b of bombs) {
+      addPlay(
+        b.cards,
+        PlayType.BOMB_N_TUPLE,
+        context.game.getOrder(b.rank),
+        b.cards.length,
+        b.rank
+      );
+    }
+    const upgraded = finalGroups.filter((g) => g.cards.length >= 4);
+    for (const g of upgraded) {
+      addPlay(
+        g.cards,
+        PlayType.BOMB_N_TUPLE,
+        context.game.getOrder(g.rank),
+        g.cards.length,
+        g.rank
+      );
+    }
+    let pairs = finalGroups.filter((g) => g.cards.length === 2);
+    const triples = finalGroups.filter((g) => g.cards.length === 3);
+    const singles = finalGroups.filter((g) => g.cards.length === 1);
+
+    // Match pairs into triples as full houses.
+    let absorbable = pairs;
+    if (mode === 'OVERALL') {
+      absorbable = pairs.filter(
+        (g) =>
+          overallValuePlay(
+            PlayType.PAIR,
+            context.game.getOrder(g.rank),
+            2,
+            g.rank
+          ) > 0
+      );
+    }
+    const keptPairs = [];
+    const tripleQueue = [...triples];
+    for (const p of absorbable) {
+      const t = tripleQueue.shift();
+      if (!t) {
+        keptPairs.push(p);
+        continue;
+      }
+      addPlay(
+        [...t.cards, ...p.cards],
+        PlayType.FULL_HOUSE,
+        context.game.getOrder(t.rank),
+        5,
+        t.rank
+      );
+    }
+    for (const t of tripleQueue) {
+      addPlay(
+        t.cards,
+        PlayType.TRIPLE,
+        context.game.getOrder(t.rank),
+        3,
+        t.rank
+      );
+    }
+    for (const p of keptPairs) {
+      addPlay(p.cards, PlayType.PAIR, context.game.getOrder(p.rank), 2, p.rank);
+    }
+    for (const s of singles) {
+      addPlay(
+        s.cards,
+        PlayType.SINGLE,
+        context.game.getOrder(s.rank),
+        1,
+        s.rank
+      );
+    }
+    for (const c of wildSingles) {
+      addPlay([c], PlayType.SINGLE, c.rank.power, 1, c.rank.natural);
+    }
+    if (jokers.length === 4) {
+      addPlay(jokers, PlayType.FOUR_JOKER, 0, 4, 0);
+    } else {
+      for (const c of jokers) {
+        addPlay([c], PlayType.SINGLE, c.rank.power, 1, c.rank.natural);
+      }
+    }
+    return { score, plays };
+  }
+
+  // Finish a plan at a leaf: decompose whatever is left into concrete plays
+  // and add their cost to the accumulated plan score.
+  function finishPlan(plan, cardsByRank, context) {
+    const deco = decomposeLeftover(cardsByRank, context, context.mode);
+    return {
+      score: plan.score + deco.score,
+      plays: [...plan.plays, ...deco.plays],
+    };
+  }
+
+  // Cost added to the accumulated plan score when a play is extracted.
+  // HANDS/HEURISTICS: every play costs 1 hand except bombs (0).
+  // OVERALL: the play's heuristic value from the reference estimator.
+  function playExtractionCost(context, playRank, count, naturalRank) {
+    if (context.mode === 'OVERALL') {
+      return overallValuePlay(playRank.type, playRank.rank, count, naturalRank);
+    }
+    return playRank.type === PlayType.BOMB_N_TUPLE ? 0 : 1;
+  }
+
   const playCardsOfTheSameRank = (n) => ({ cards, nowRank, plan, context }) => {
     const newCards = { ...cards };
     const taken = takeCard(newCards, nowRank, n);
@@ -510,7 +920,8 @@
     return {
       cardsByRank: newCards,
       plan: {
-        score: plan.score + (n > 3 ? 0 : 1),
+        score:
+          plan.score + playExtractionCost(context, playRank, n, nowRank),
         plays: plan.plays.concat({
           playRank,
           cards: taken,
@@ -543,7 +954,9 @@
     return {
       cardsByRank: newCardsByRank,
       plan: {
-        score: plan.score + 1,
+        score:
+          plan.score +
+          playExtractionCost(context, play.playRank, length * cardCount, nowRank),
         plays: plan.plays.concat(play),
       },
     };
@@ -577,7 +990,14 @@
     return {
       cardsByRank: newCardsByRank,
       plan: {
-        score: plan.score + 0,
+        score:
+          plan.score +
+          playExtractionCost(
+            context,
+            play.playRank,
+            5,
+            nowRank
+          ),
         plays: plan.plays.concat(play),
       },
     };
@@ -590,6 +1010,9 @@
   const playBomb6 = playCardsOfTheSameRank(6);
   const playBomb7 = playCardsOfTheSameRank(7);
   const playBomb8 = playCardsOfTheSameRank(8);
+  // 9/10-bombs are only possible with wild cards (8 natural + 2 wilds max)
+  const playBomb9 = playCardsOfTheSameRank(9);
+  const playBomb10 = playCardsOfTheSameRank(10);
 
   const playFullHouse = ({ cards, nowRank, plan, context }) => {
     const result = playTriple({ cards, nowRank, plan, context });
@@ -615,7 +1038,14 @@
       },
       cards: triplePlay.cards.concat(pairPlay.cards),
     });
-    newPlan.score = newPlan.score - 1;
+    if (context.mode === 'OVERALL') {
+      // full house value == triple value; drop the pair's value
+      newPlan.score =
+        newPlan.score -
+        overallValuePlay(PlayType.PAIR, pairPlay.playRank.rank, 2);
+    } else {
+      newPlan.score = newPlan.score - 1;
+    }
     return { plan: newPlan, cardsByRank: newCards };
   };
 
@@ -644,6 +1074,8 @@
       playBomb6,
       playBomb7,
       playBomb8,
+      playBomb9,
+      playBomb10,
     ],
     [PlayType.STRAIGHT]: [playStraight],
     [PlayType.TUBE]: [playTube],
@@ -660,6 +1092,15 @@
     if (context.debug) {
       console.log(PlayType[now.type], now.rank, now.suit);
     }
+    // Branch and bound (the reference solver's "heavy pruning"): abandon the
+    // subtree when the accumulated cost plus an admissible lower bound of the
+    // leftover cards can no longer beat the best plan found so far.
+    if (context.boundFn) {
+      const bound = plan.score + context.boundFn(cardsByRank, context.game);
+      if (bound > context.searchState.best) {
+        return;
+      }
+    }
     PLAY_TYPE_FUNC[now.type]?.forEach((func) => {
       const result = func({
         nowRank: now.rank,
@@ -675,7 +1116,7 @@
     });
     const next = nextIteratorState(now);
     if (next == null) {
-      context.collectPlan(playRestOfCardsAsSingles(plan, cardsByRank));
+      context.collectPlan(finishPlan(plan, cardsByRank, context));
       return;
     }
     iterateImp({
@@ -686,27 +1127,11 @@
     });
   }
 
-  function playRestOfCardsAsSingles(plan, cardsByRank) {
-    const resultPlan = { ...plan, plays: [...plan.plays] };
-    Object.entries(cardsByRank).forEach(([_, cards]) => {
-      if (!cards) {
-        return;
-      }
-      resultPlan.score += cards.length;
-      cards.forEach((card) => {
-        resultPlan.plays.push({
-          playRank: {
-            type: PlayType.SINGLE,
-            rank: card.rank.power,
-          },
-          cards: [card],
-        });
-      });
-    });
-    return resultPlan;
-  }
-
   // === Strategy Interface (calc) ===
+  // scorers:
+  // - 'HANDS'     minimize the number of hands to finish (pruned search)
+  // - 'OVERALL'   minimize the reference's overall-value cost (pruned search)
+  // - 'HEURISTICS' legacy capped heuristic (exhaustive, kept for compat)
   function calc({
     cards: rawCards,
     mainRank,
@@ -715,19 +1140,51 @@
   }) {
     const context = new GameContext(mainRank);
     const cards = rawCards.map((rawCard) => parseCardRaw(rawCard, context));
-    const scorerFunc = scorer === 'HEURISTICS' ? heuristicScore : handsScore;
+    let mode;
+    let scorerFunc;
+    let boundFn = null;
+    if (scorer === 'HEURISTICS') {
+      mode = 'HEURISTICS';
+      scorerFunc = heuristicScore;
+    } else if (scorer === 'OVERALL') {
+      mode = 'OVERALL';
+      scorerFunc = handsScore;
+      boundFn = overallLeftoverEstimate;
+    } else {
+      mode = 'HANDS';
+      scorerFunc = handsScore;
+      boundFn = minHandsLowerBound;
+    }
+    const searchState = { best: MAX_SCORE };
+    const collectPlan = (plan) => {
+      if (plan.score < searchState.best) {
+        searchState.best = plan.score;
+      }
+      return plan;
+    };
+    const planSink = morePlans
+      ? makeAllBestPlansCollector({ scorer: scorerFunc })
+      : makeBestPlanCollector({ scorer: scorerFunc });
+    const wrappedCollect = (plan) => {
+      collectPlan(plan);
+      planSink.collectPlan(plan);
+    };
+    iteratePlans({
+      cards,
+      collectPlan: wrappedCollect,
+      context,
+      mode,
+      boundFn,
+      searchState,
+    });
     if (morePlans) {
-      const planCollector = makeAllBestPlansCollector({ scorer: scorerFunc });
-      iteratePlans({ cards, collectPlan: planCollector.collectPlan, context });
-      const bestPlans = planCollector.getBestPlans();
+      const bestPlans = planSink.getBestPlans();
       if (bestPlans.length == 0) {
         throw new Error('No plan found');
       }
       return bestPlans;
     } else {
-      const bestPlanCollector = makeBestPlanCollector({ scorer: scorerFunc });
-      iteratePlans({ cards, collectPlan: bestPlanCollector.collectPlan, context });
-      const bestPlan = bestPlanCollector.getBestPlan();
+      const bestPlan = planSink.getBestPlan();
       if (bestPlan == null) {
         throw new Error('No plan found');
       }

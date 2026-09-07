@@ -48,7 +48,12 @@ The current level determines which cards are "level cards":
 
 2. **Wild Cards (Hearts Only):** The two level cards in **Hearts** are wild
    - Can substitute for any card except jokers
+   - Works in every combination type: singles, pairs, triples, full houses, bombs, straights, tubes, plates and straight flushes (but never the joker bomb)
    - Example at Level 6: Both 6♥ are wild cards
+
+3. **Sequences Use Natural Positions:** Level cards participate in straights, tubes and plates at their **natural numerical position**, not above aces
+   - At level 7, `6-7-8-9-10` is a straight and `7-7-8-8-9-9` is a tube
+   - `6-8-9-10-J` (skipping the 7) is **not** a sequence at level 7
 
 ---
 
@@ -100,27 +105,32 @@ When you have **10 or fewer cards**, you must declare exactly how many cards rem
 - Example: `J-J-J`
 
 ### 4. Straight (顺子)
-- **5+ consecutive cards** in natural order
-- Aces can be low: `A-2-3-4-5` ✓
+- **Exactly 5 consecutive cards** in natural order (longer runs are not straights)
+- Aces can be low: `A-2-3-4-5` ✓ (the weakest straight)
 - Aces can be high: `10-J-Q-K-A` ✓
-- Cannot wrap around
+- Cannot wrap around otherwise
 - Jokers cannot be used
-- Example: `4-5-6-7-8-9`
+- Level cards join at their **natural** position (at level 7, `6-7-8-9-10` is a straight)
+- Wild cards may substitute for any missing card
+- Example: `4-5-6-7-8`
 
 ### 5. Pairs Straight (连对 Tube)
-- **3+ consecutive pairs**
-- Example: `5-5-6-6-7-7` (3 pairs)
-- Example: `9-9-10-10-J-J-Q-Q` (4 pairs)
+- **Exactly 3 consecutive pairs** (6 cards)
+- Example: `5-5-6-6-7-7`
+- A can be low: `A-A-2-2-3-3` ✓
+- Level cards participate at their natural position; wild cards may fill gaps
 
 ### 6. Triples Straight (三连 Plate)
-- **2+ consecutive triples**
-- Example: `3-3-3-4-4-4` (2 triples)
-- Example: `7-7-7-8-8-8-9-9-9` (3 triples)
+- **Exactly 2 consecutive triples** (6 cards)
+- Example: `3-3-3-4-4-4`
+- A can be low: `A-A-A-2-2-2` ✓
+- Level cards participate at their natural position; wild cards may fill gaps
 
 ### 7. Full House
 - Triple + Pair
 - Example: `K-K-K-5-5`
-- **Comparison:** Only the triple part matters
+- **Comparison:** Only the triple part matters (level-aware: a level triple beats an ace triple)
+- Wild cards may complete the triple or the pair
 
 ---
 
@@ -139,6 +149,8 @@ Bombs are special combinations that can beat any ordinary combination.
 3. **Straight Flush:** 5 consecutive cards, same suit
    - Example: `3♠-4♠-5♠-6♠-7♠`
    - Beats all 4-bombs and 5-bombs
+   - `A-2-3-4-5` suited is the weakest straight flush
+   - Ranked by top card, independent of the level
 
 4. **6-Bomb (Sextuple):** 6 cards of same rank
    - Beats straight flushes
@@ -247,6 +259,7 @@ From the **second hand onward**, losers pay tribute to winners before play begin
 6. **Level Cards:** Prioritize collecting level cards for their enhanced rank
 7. **Tribute Management:** When paying tribute, consider what your opponent needs
 8. **Straights and Sequences:** Build these combinations; hard for opponents to beat
+9. **Min-Hands Planning:** Decompose your hand into the fewest possible plays and lead your weakest play to keep control — the built-in 💡 hint does exactly this
 
 ---
 
@@ -316,4 +329,4 @@ Wild Cards: 6♥ 6♥
 
 ---
 
-*Last Updated: October 2024*
+*Last Updated: September 2026*

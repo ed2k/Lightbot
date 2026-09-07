@@ -59,39 +59,25 @@ class GuandanGame {
         this.hands.West = deck.slice(81, 108).sort((a, b) => this.compareCards(a, b));
     }
 
-    compareCards(a, b) {
-        // Jokers are highest
-        if (a.isJoker && !b.isJoker) return -1;
-        if (!a.isJoker && b.isJoker) return 1;
-        if (a.isJoker && b.isJoker) {
-            return a.isSmall ? 1 : -1; // Big joker > small joker
-        }
+    // Power order: 2=0 ... A=12, level card=13, black joker=14, red joker=15.
+    // Sequences (straights/tubes/plates) use NATURAL positions only, so a
+    // level 7 straight is 6-7-8-9-10, and 7 never ranks above A inside one.
+    static NATURAL_ORDER = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 
-        // Level cards are special
-        const aIsLevel = a.rank === this.currentLevel;
-        const bIsLevel = b.rank === this.currentLevel;
-        if (aIsLevel && !bIsLevel) return -1;
-        if (!aIsLevel && bIsLevel) return 1;
-
-        // Compare by rank
-        const rankOrder = this.getRankOrder();
-        const aRank = rankOrder.indexOf(a.rank);
-        const bRank = rankOrder.indexOf(b.rank);
-        if (aRank !== bRank) return aRank - bRank;
-
-        // Same rank, compare by suit
-        return this.suits.indexOf(a.suit) - this.suits.indexOf(b.suit);
+    getCardPower(card) {
+        if (card.isJoker) return card.isSmall ? 14 : 15;
+        if (card.rank === this.currentLevel) return 13;
+        return GuandanGame.NATURAL_ORDER.indexOf(card.rank);
     }
 
-    getRankOrder() {
-        // Current level card is highest (after jokers)
-        const order = [...this.ranks];
-        const levelIndex = order.indexOf(this.currentLevel);
-        if (levelIndex !== -1) {
-            order.splice(levelIndex, 1);
-            order.push(this.currentLevel);
-        }
-        return order;
+    isWildCard(card) {
+        return !card.isJoker && card.rank === this.currentLevel && card.suit === '♥';
+    }
+
+    compareCards(a, b) {
+        const diff = this.getCardPower(a) - this.getCardPower(b);
+        if (diff !== 0) return diff;
+        return this.suits.indexOf(a.suit) - this.suits.indexOf(b.suit);
     }
 
     getRotatedPositions() {
@@ -144,6 +130,7 @@ class GuandanGame {
     createCardElement(card, index, player) {
         const cardElement = document.createElement('div');
         cardElement.className = `card ${card.color}`;
+        cardElement.dataset.cardId = card.isJoker ? (card.isSmall ? 'BJ' : 'RJ') : `${card.rank}${card.suit}`;
         
         if (card.isJoker) {
             cardElement.innerHTML = `<div class="card-rank">${card.rank}</div>`;
@@ -206,7 +193,7 @@ class GuandanGame {
 
         // Log the play
         const pattern = this.identifyPattern(cards);
-        const comboType = pattern ? pattern.type.toUpperCase() : 'COMBO';
+        const comboType = pattern ? this.patternName(pattern) : 'COMBO';
         addToGameLog(player, 'play', cards, comboType);
 
         this.renderAllPlays();
@@ -222,74 +209,460 @@ class GuandanGame {
     }
 
     isValidPlay(cards) {
-        if (cards.length === 0) return false;
-
-        // If no last play, any valid combination is OK
-        if (!this.lastPlay) {
-            return this.identifyPattern(cards) !== null;
-        }
-
-        // Must beat the last play
         const pattern = this.identifyPattern(cards);
-        const lastPattern = this.identifyPattern(this.lastPlay.cards);
-
-        if (!pattern || !lastPattern) return false;
-        if (pattern.type !== lastPattern.type) return false;
-        if (pattern.length !== lastPattern.length) return false;
-
-        return this.comparePatterns(pattern, lastPattern) > 0;
+        if (!pattern) return false;
+        if (!this.lastPlay) return true;
+        const last = this.identifyPattern(this.lastPlay.cards);
+        if (!last) return true;
+        return this.beatsPattern(pattern, last);
     }
 
+    // Bomb tiers per the bomb hierarchy:
+    // 4-bomb(1) < 5-bomb(2) < straight flush(3) < 6-bomb(4) ... < 10-bomb(8) < joker bomb(9)
+    bombTier(length) {
+        return length <= 5 ? length - 3 : length - 2;
+    }
+
+    static BOMB_TYPES = ['bomb', 'straight_flush', 'joker_bomb'];
+
+    beatsPattern(p, last) {
+        const pBomb = GuandanGame.BOMB_TYPES.includes(p.type);
+        const lBomb = GuandanGame.BOMB_TYPES.includes(last.type);
+        if (pBomb && lBomb) {
+            if (p.type === 'joker_bomb') return last.type !== 'joker_bomb';
+            if (last.type === 'joker_bomb') return false;
+            if (p.tier !== last.tier) return p.tier > last.tier;
+            return p.rank > last.rank;
+        }
+        if (pBomb) return true;
+        if (lBomb) return false;
+        if (p.type !== last.type) return false;
+        if (p.length !== last.length) return false;
+        return p.rank > last.rank;
+    }
+
+    // Cards left in the current trick must be beaten by the same type (same
+    // length for sequences) with a higher rank, or by any bomb.
     identifyPattern(cards) {
-        if (cards.length === 0) return null;
+        if (!cards || cards.length === 0) return null;
 
-        const sorted = [...cards].sort((a, b) => this.compareCards(a, b));
-        
-        // Single
-        if (cards.length === 1) {
-            return { type: 'single', length: 1, rank: this.getCardValue(sorted[0]) };
+        const jokers = cards.filter(c => c.isJoker);
+        const wilds = cards.filter(c => !c.isJoker && this.isWildCard(c));
+        const normals = cards.filter(c => !c.isJoker && !this.isWildCard(c));
+        const nWild = wilds.length;
+        const groups = {};
+        for (const c of normals) {
+            groups[c.rank] = (groups[c.rank] || 0) + 1;
+        }
+        const usedRanks = Object.keys(groups);
+        const total = cards.length;
+
+        // Jokers only play alone (singles, same-color pairs) or as a joker bomb
+        if (jokers.length > 0) {
+            if (jokers.length === 4 && normals.length === 0 && nWild === 0) {
+                return { type: 'joker_bomb', rank: 15, length: 4, tier: 9 };
+            }
+            if (normals.length === 0 && nWild === 0 && jokers.length === 2 &&
+                jokers[0].isSmall === jokers[1].isSmall) {
+                return { type: 'pair', rank: jokers[0].isSmall ? 14 : 15, length: 2 };
+            }
+            if (jokers.length === 1 && normals.length === 0 && nWild === 0) {
+                return { type: 'single', rank: jokers[0].isSmall ? 14 : 15, length: 1 };
+            }
+            return null;
         }
 
-        // Pair
-        if (cards.length === 2 && sorted[0].rank === sorted[1].rank) {
-            return { type: 'pair', length: 2, rank: this.getCardValue(sorted[0]) };
+        if (total === 1) {
+            const rank = normals.length ? this.getCardPower(normals[0]) : 13;
+            return { type: 'single', rank, length: 1 };
         }
 
-        // Triple
-        if (cards.length === 3 && sorted[0].rank === sorted[1].rank && sorted[1].rank === sorted[2].rank) {
-            return { type: 'triple', length: 3, rank: this.getCardValue(sorted[0]) };
+        // Same natural rank (wild cards may top up): pair / triple / bomb.
+        // Rank comparisons here are level-aware: a level pair beats an A pair.
+        if (usedRanks.length <= 1) {
+            const rank = usedRanks.length ? this.getCardPower(normals[0]) : 13;
+            if (total === 2) return { type: 'pair', rank, length: 2 };
+            if (total === 3) return { type: 'triple', rank, length: 3 };
+            if (total >= 4 && total <= 10) {
+                return { type: 'bomb', rank, length: total, tier: this.bombTier(total) };
+            }
+            return null;
         }
 
-        // Straight (5+ consecutive cards)
-        if (cards.length >= 5) {
-            if (this.isStraight(sorted)) {
-                return { type: 'straight', length: cards.length, rank: this.getCardValue(sorted[sorted.length - 1]) };
+        if (total === 5) {
+            // Straight flush first: same suit + consecutive natural ranks
+            // (A-2-3-4-5 is the weakest straight flush)
+            if (normals.length > 0 && normals.every(c => c.suit === normals[0].suit)) {
+                const rank = this.matchSequence(groups, nWild, 1, 5, true);
+                if (rank !== null) {
+                    return { type: 'straight_flush', rank, length: 5, tier: 3 };
+                }
+            }
+            const straight = this.matchSequence(groups, nWild, 1, 5, true);
+            if (straight !== null) {
+                return { type: 'straight', rank: straight, length: 5 };
+            }
+            const fh = this.matchFullHouse(groups, nWild);
+            if (fh !== null) {
+                return { type: 'full_house', rank: fh, length: 5 };
+            }
+            return null;
+        }
+
+        if (total === 6) {
+            const tube = this.matchSequence(groups, nWild, 2, 3, true);
+            if (tube !== null) {
+                return { type: 'tube', rank: tube, length: 6 };
+            }
+            const plate = this.matchSequence(groups, nWild, 3, 2, true);
+            if (plate !== null) {
+                return { type: 'plate', rank: plate, length: 6 };
+            }
+            return null;
+        }
+
+        return null;
+    }
+
+    // Try to match a sequence of `length` consecutive ranks with `perCount`
+    // cards per rank (1=straight/straight flush, 2=tube of pairs, 3=plate of
+    // triples). Level cards participate at their natural position; wild cards
+    // fill gaps. Matches the reference solver's rank space: A is adjacent to
+    // both 2 (A-2-3 low windows) and K (10-J-Q-K-A high windows). Returns the
+    // natural power of the top rank of the best (highest) matching window,
+    // or null.
+    matchSequence(groups, nWild, perCount, length, allowALow) {
+        const order = GuandanGame.NATURAL_ORDER;
+        let best = null;
+        const check = (window) => {
+            let deficits = 0;
+            for (const rank of window) {
+                const c = groups[rank] || 0;
+                if (c > perCount) return;
+                deficits += perCount - c;
+            }
+            if (deficits > nWild) return;
+            const rank = GuandanGame.NATURAL_ORDER.indexOf(window[window.length - 1]);
+            if (best === null || rank > best) best = rank;
+        };
+        for (let i = 0; i + length <= order.length; i++) {
+            check(order.slice(i, i + length));
+        }
+        if (allowALow) {
+            check(['A', ...order.slice(0, length - 1)]);
+        }
+        return best;
+    }
+
+    // Match triple + pair for a full house; wild cards may complete either
+    // part. Returns the level-aware power of the triple rank, or null.
+    matchFullHouse(groups, nWild) {
+        let best = null;
+        const consider = (tripleRank) => {
+            const rank = this.getCardPower({ rank: tripleRank, isJoker: false });
+            if (best === null || rank > best) best = rank;
+        };
+        for (const r of Object.keys(groups)) {
+            const cr = groups[r];
+            if (cr > 3) continue;
+            const wR = 3 - cr;
+            if (wR > nWild) continue;
+            const wP = nWild - wR;
+            for (const p of Object.keys(groups)) {
+                if (p === r) continue;
+                if (groups[p] <= 2 && 2 - groups[p] === wP) consider(r);
+            }
+            if (wP === 2) consider(r); // pair made of two wild cards
+        }
+        return best;
+    }
+
+    patternName(pattern) {
+        const names = {
+            single: 'SINGLE',
+            pair: 'PAIR',
+            triple: 'TRIPLE',
+            full_house: 'FULL HOUSE',
+            straight: 'STRAIGHT',
+            tube: 'TUBE',
+            plate: 'PLATE',
+            straight_flush: 'STRAIGHT FLUSH',
+            bomb: `BOMB x${pattern.length}`,
+            joker_bomb: 'JOKER BOMB'
+        };
+        return names[pattern.type] || 'COMBO';
+    }
+
+    // Enumerate minimal combos from the hand that beat `last` (a pattern
+    // object). Wild cards are only spent to complete a combo, never wasted.
+    generateBeatingCandidates(hand, last) {
+        if (!last) return [];
+        const cands = [];
+        const seen = new Set();
+        const wilds = hand.filter(c => this.isWildCard(c));
+        const normals = hand.filter(c => !c.isJoker && !this.isWildCard(c));
+        const jokers = hand.filter(c => c.isJoker);
+        const byRank = {};
+        const bySuit = {};
+        for (const c of normals) {
+            (byRank[c.rank] = byRank[c.rank] || []).push(c);
+            (bySuit[c.suit] = bySuit[c.suit] || []).push(c);
+        }
+        const add = (cards) => {
+            const p = this.identifyPattern(cards);
+            if (!p || !this.beatsPattern(p, last)) return;
+            const key = `${p.type}|${p.length}|${p.rank}`;
+            if (seen.has(key)) return;
+            seen.add(key);
+            cands.push({ cards, pattern: p });
+        };
+        const isBombLast = GuandanGame.BOMB_TYPES.includes(last.type);
+        const nonBombTypes = ['single', 'pair', 'triple', 'full_house', 'straight', 'tube', 'plate'];
+
+        if (!isBombLast && nonBombTypes.includes(last.type)) {
+            if (last.type === 'single') {
+                const usedPowers = new Set();
+                for (const c of hand) {
+                    const p = this.getCardPower(c);
+                    if (p > last.rank && !usedPowers.has(p)) {
+                        usedPowers.add(p);
+                        add([c]);
+                    }
+                }
+            } else if (last.type === 'pair' || last.type === 'triple') {
+                const need = last.type === 'pair' ? 2 : 3;
+                for (const r of Object.keys(byRank)) {
+                    if (GuandanGame.NATURAL_ORDER.indexOf(r) <= last.rank) continue;
+                    const g = byRank[r];
+                    if (g.length >= need) {
+                        add(g.slice(0, need));
+                    } else if (g.length + wilds.length >= need) {
+                        add(g.concat(wilds.slice(0, need - g.length)));
+                    }
+                }
+                if (13 > last.rank && wilds.length >= need) {
+                    add(wilds.slice(0, need));
+                }
+            } else if (last.type === 'full_house') {
+                for (const r of Object.keys(byRank)) {
+                    if (GuandanGame.NATURAL_ORDER.indexOf(r) <= last.rank) continue;
+                    const g = byRank[r];
+                    const triple = g.length >= 3 ? g.slice(0, 3)
+                        : (g.length + wilds.length >= 3 ? g.concat(wilds.slice(0, 3 - g.length)) : null);
+                    if (!triple) continue;
+                    const restWilds = wilds.slice(triple.length - g.length);
+                    const pairRanks = Object.keys(byRank)
+                        .filter(x => x !== r)
+                        .sort((a, b) => GuandanGame.NATURAL_ORDER.indexOf(a) - GuandanGame.NATURAL_ORDER.indexOf(b));
+                    let pair = null;
+                    for (const p of pairRanks) {
+                        const pg = byRank[p].filter(c => !triple.includes(c));
+                        if (pg.length >= 2) { pair = pg.slice(0, 2); break; }
+                        if (pg.length + restWilds.length >= 2) { pair = pg.concat(restWilds.slice(0, 2 - pg.length)); break; }
+                    }
+                    if (!pair && restWilds.length >= 2) pair = restWilds.slice(0, 2);
+                    if (pair) add(triple.concat(pair));
+                }
+            } else {
+                const spec = {
+                    straight: { perCount: 1, length: 5, allowALow: true },
+                    tube: { perCount: 2, length: 3, allowALow: false },
+                    plate: { perCount: 3, length: 2, allowALow: false }
+                }[last.type];
+                for (const cards of this.buildSequenceCandidates(byRank, wilds, spec, last.rank)) {
+                    add(cards);
+                }
             }
         }
 
-        // For simplicity, accept any combination
-        return { type: 'combo', length: cards.length, rank: this.getCardValue(sorted[sorted.length - 1]) };
-    }
-
-    isStraight(sorted) {
-        const rankOrder = this.getRankOrder();
-        for (let i = 1; i < sorted.length; i++) {
-            const prevIdx = rankOrder.indexOf(sorted[i - 1].rank);
-            const currIdx = rankOrder.indexOf(sorted[i].rank);
-            if (currIdx !== prevIdx + 1) return false;
+        // Bombs: beat any non-bomb, or a lower/same-tier bomb with lower rank
+        for (const r of Object.keys(byRank)) {
+            const g = byRank[r];
+            const maxLen = Math.min(10, g.length + wilds.length);
+            for (let s = 4; s <= maxLen; s++) {
+                const tier = this.bombTier(s);
+                const beats = isBombLast
+                    ? (last.type === 'joker_bomb' ? false
+                        : (tier > last.tier || (tier === last.tier && GuandanGame.NATURAL_ORDER.indexOf(r) > last.rank)))
+                    : true;
+                if (!beats) continue;
+                const cards = g.slice(0, Math.min(g.length, s))
+                    .concat(wilds.slice(0, Math.max(0, s - g.length)));
+                if (cards.length === s) {
+                    add(cards);
+                    break; // smallest qualifying bomb of this rank
+                }
+            }
         }
-        return true;
+
+        // Straight flushes (tier 3)
+        const sfBeats = !isBombLast || last.type === 'straight_flush' || last.tier < 3;
+        if (sfBeats && last.type !== 'joker_bomb') {
+            for (const suit of Object.keys(bySuit)) {
+                const cards = this.buildStraightFlushCandidate(
+                    bySuit[suit], wilds, last.type === 'straight_flush' ? last.rank : -1);
+                if (cards) add(cards);
+            }
+        }
+
+        // Joker bomb
+        if (jokers.length === 4 && last.type !== 'joker_bomb') {
+            add(jokers.slice());
+        }
+
+        cands.sort((a, b) => a.pattern.rank - b.pattern.rank || a.pattern.length - b.pattern.length);
+        return cands.slice(0, 30);
     }
 
-    getCardValue(card) {
-        if (card.isJoker) return card.isSmall ? 100 : 101;
-        if (card.rank === this.currentLevel) return 50;
-        const rankOrder = this.getRankOrder();
-        return rankOrder.indexOf(card.rank);
+    buildSequenceCandidates(byRank, wilds, { perCount, length, allowALow }, minRank) {
+        const order = GuandanGame.NATURAL_ORDER;
+        const results = [];
+        const tryWindow = (window) => {
+            const cards = [];
+            const availWilds = wilds.slice();
+            for (const rank of window) {
+                const g = byRank[rank] || [];
+                const take = Math.min(g.length, perCount);
+                for (let k = 0; k < take; k++) cards.push(g[k]);
+                for (let k = take; k < perCount; k++) {
+                    if (!availWilds.length) return;
+                    cards.push(availWilds.shift());
+                }
+            }
+            results.push(cards);
+        };
+        for (let i = 0; i + length <= order.length; i++) {
+            const window = order.slice(i, i + length);
+            if (GuandanGame.NATURAL_ORDER.indexOf(window[window.length - 1]) > minRank) {
+                tryWindow(window);
+            }
+        }
+        if (allowALow) {
+            const lowTop = order[length - 2];
+            if (GuandanGame.NATURAL_ORDER.indexOf(lowTop) > minRank) {
+                tryWindow(['A', ...order.slice(0, length - 1)]);
+            }
+        }
+        return results;
     }
 
-    comparePatterns(p1, p2) {
-        return p1.rank - p2.rank;
+    buildStraightFlushCandidate(suitCards, wilds, minRank) {
+        const order = GuandanGame.NATURAL_ORDER;
+        const byRank = {};
+        for (const c of suitCards) byRank[c.rank] = c;
+        const tryWindow = (window) => {
+            if (GuandanGame.NATURAL_ORDER.indexOf(window[window.length - 1]) <= minRank) return null;
+            const cards = [];
+            const w = wilds.slice();
+            for (const rank of window) {
+                if (byRank[rank]) { cards.push(byRank[rank]); continue; }
+                if (w.length) { cards.push(w.shift()); continue; }
+                return null;
+            }
+            return cards;
+        };
+        for (let i = 0; i + 5 <= order.length; i++) {
+            const cards = tryWindow(order.slice(i, i + 5));
+            if (cards) return cards;
+        }
+        return tryWindow(['A', ...order.slice(0, 4)]);
+    }
+
+    // Solver-based hint, following Bobgy/poker-guandan-strategy: play to
+    // minimize the number of hands needed to finish the remaining cards.
+    getSolverMove(hand, lastPlay) {
+        const mainRank = GuandanStrategy.convertLevelToValue(this.currentLevel);
+        const toRaw = (cards) => cards.map(c => GuandanStrategy.convertCardToRaw(c));
+        const handsNeeded = (cards) => GuandanStrategy.calc({
+            cards: toRaw(cards),
+            mainRank,
+            morePlans: false,
+            scorer: 'HANDS'
+        })[0].score;
+
+        if (!lastPlay) {
+            const plan = GuandanStrategy.calc({
+                cards: toRaw(hand),
+                mainRank,
+                morePlans: false,
+                scorer: 'HANDS'
+            })[0];
+            // Bombs/straight flushes are ~free hands; prefer leading a bounded
+            // play, and lead the weakest one to keep control of later tricks.
+            const FREE_TYPES = [8, 9, 10]; // straight flush, bombs, joker bomb
+            const bounded = plan.plays.filter(p => !FREE_TYPES.includes(p.playRank.type));
+            const pool = bounded.length ? bounded : plan.plays;
+            pool.sort((a, b) => a.playRank.rank - b.playRank.rank || a.playRank.type - b.playRank.type);
+            const pick = pool[0];
+            return {
+                pass: false,
+                cards: this.mapSolverCardsToHand(pick.cards, hand),
+                typeName: getPlayTypeName(pick.playRank.type),
+                hands: plan.score,
+                note: 'Lead the weakest play of your best decomposition to keep control.'
+            };
+        }
+
+        const lastPattern = this.identifyPattern(lastPlay.cards);
+        if (!lastPattern) return null;
+        const candidates = this.generateBeatingCandidates(hand, lastPattern);
+        if (candidates.length === 0) {
+            return { pass: true, reason: 'No valid move can beat the last play.' };
+        }
+        const baseHands = handsNeeded(hand);
+        let best = null;
+        for (const cand of candidates) {
+            const rest = hand.filter(c => !cand.cards.includes(c));
+            let h;
+            try {
+                h = handsNeeded(rest);
+            } catch (e) {
+                continue;
+            }
+            const wildsUsed = cand.cards.filter(c => this.isWildCard(c)).length;
+            const better = best === null
+                || h < best.hands
+                || (h === best.hands && (wildsUsed < best.wildsUsed
+                    || (wildsUsed === best.wildsUsed && cand.cards.length < best.cards.length)));
+            if (better) {
+                best = Object.assign({}, cand, { hands: h, wildsUsed });
+            }
+        }
+        if (!best) {
+            return { pass: true, reason: 'Could not evaluate any beating move.' };
+        }
+        const lastPlayerIndex = this.players.indexOf(this.lastPlayer);
+        const partnerLed = lastPlayerIndex % 2 === 0; // South & North are partners
+        if (partnerLed && best.hands >= baseHands && baseHands > 1) {
+            return {
+                pass: true,
+                reason: `${this.lastPlayer} (your partner) leads this trick and no move improves your decomposition. Pass to keep the lead with the team.`,
+                baseHands
+            };
+        }
+        return {
+            pass: false,
+            cards: best.cards,
+            typeName: this.patternName(best.pattern),
+            hands: best.hands,
+            baseHands,
+            note: best.hands < baseHands
+                ? `Beating now leaves you only ${best.hands} hand${best.hands === 1 ? '' : 's'} to finish.`
+                : 'Weakest beat that preserves your hand decomposition.'
+        };
+    }
+
+    mapSolverCardsToHand(solverCards, hand) {
+        const suitMap = { S: '♠', H: '♥', C: '♣', D: '♦' };
+        const labels = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K', 14: 'Joker', 15: 'Joker' };
+        return solverCards.map(sc => {
+            const rankLabel = labels[sc.rank.natural] || String(sc.rank.natural);
+            return hand.find(c => {
+                if (sc.suit === 'R') return c.isJoker && !c.isSmall;
+                if (sc.suit === 'B') return c.isJoker && c.isSmall;
+                return !c.isJoker && c.suit === suitMap[sc.suit] && c.rank === rankLabel;
+            });
+        }).filter(Boolean);
     }
 
     pass() {
@@ -480,6 +853,11 @@ class GuandanAI {
     constructor(level = 2) {
         this.level = level;
         this.ranks = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+    }
+
+    static levelFromText(text) {
+        const idx = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'].indexOf(text);
+        return idx === -1 ? 2 : idx + 2;
     }
 
     // Card evaluation
@@ -836,8 +1214,8 @@ let aiHelper;
 
 document.addEventListener('DOMContentLoaded', () => {
     game = new GuandanGame();
-    aiHelper = new GuandanAI(2); // Start at level 2
-    
+    aiHelper = new GuandanAI(GuandanAI.levelFromText(game.currentLevel));
+
     // Add hint button to UI
     addHintButton();
 });
@@ -907,23 +1285,22 @@ function addHintButton() {
 
 function showHint() {
     if (!game || !aiHelper) return;
-    
+
     const currentPlayerName = game.players[game.currentPlayer];
     const hand = game.hands[currentPlayerName];
-    
+
     if (!hand || hand.length === 0) {
         alert('No cards in hand!');
         return;
     }
-    
-    // Get AI hint
-    const hint = aiHelper.getHint(hand, game.lastPlay, hand.length);
+
+    aiHelper.level = GuandanAI.levelFromText(game.currentLevel);
     const analysis = aiHelper.analyzePosition(hand, game.lastPlay);
-    
+
     // Display hint
     const hintArea = document.getElementById('hint-area');
     if (!hintArea) return;
-    
+
     let hintHTML = `
         <h4>🤖 AI Strategic Hint</h4>
         <p><strong>Hand Strength:</strong> ${analysis.handStrength} points</p>
@@ -931,29 +1308,65 @@ function showHint() {
         <p><strong>Valid Moves:</strong> ${analysis.validMoves}</p>
         <hr style="margin: 10px 0; border: none; border-top: 1px solid #667eea;">
     `;
-    
-    if (hint.action === 'pass') {
-        hintHTML += `
-            <p><strong>💭 Recommendation:</strong> ${hint.recommendation}</p>
-            <p><strong>Reason:</strong> ${hint.reason}</p>
-        `;
-    } else {
-        hintHTML += `
-            <p><strong>🎯 Recommended Move:</strong> ${hint.move.type.toUpperCase()}</p>
-            <p><strong>💪 Power:</strong> ${hint.move.power}</p>
-            <div class="hint-cards">
-                ${hint.move.cards.map(card => `
-                    <span class="hint-card" style="color: ${card.color}">
-                        ${card.rank}${card.suit}
-                    </span>
-                `).join('')}
-            </div>
-            <p><strong>📊 Strategy:</strong> ${hint.reason}</p>
-            <p><strong>💡 Tip:</strong> ${hint.recommendation}</p>
-        `;
+
+    let suggestedCards = null;
+    let solverOk = false;
+    try {
+        const move = game.getSolverMove(hand, game.lastPlay);
+        if (move && move.pass) {
+            solverOk = true;
+            hintHTML += `
+                <h4>🎯 Recommended Move (min-hands solver)</h4>
+                <p><strong>💭 Recommendation:</strong> PASS</p>
+                <p><strong>Reason:</strong> ${move.reason || ''}</p>
+            `;
+        } else if (move && move.cards && move.cards.length > 0) {
+            solverOk = true;
+            suggestedCards = move.cards;
+            const cardsHTML = move.cards.map(card => `
+                <span class="hint-card" style="color: ${card.color}">
+                    ${card.isJoker ? (card.isSmall ? 'BJ' : 'RJ') : `${card.rank}${card.suit}`}
+                </span>
+            `).join('');
+            hintHTML += `
+                <h4>🎯 Recommended Move (min-hands solver)</h4>
+                <p><strong>Play:</strong> ${move.typeName}</p>
+                <div class="hint-cards">${cardsHTML}</div>
+                ${move.hands != null ? `<p><strong>Hands to finish after this play:</strong> ${move.hands}${move.baseHands != null ? ` (now: ${move.baseHands})` : ''}</p>` : ''}
+                ${move.note ? `<p><strong>💡 Why:</strong> ${move.note}</p>` : ''}
+            `;
+        }
+    } catch (e) {
+        console.error('Solver hint error:', e);
     }
-    
-    // Trigger Split Cards Algorithm
+
+    if (!solverOk) {
+        // Fall back to the legacy heuristic hint
+        const hint = aiHelper.getHint(hand, game.lastPlay, hand.length);
+        if (hint.action === 'pass') {
+            hintHTML += `
+                <p><strong>💭 Recommendation:</strong> ${hint.recommendation}</p>
+                <p><strong>Reason:</strong> ${hint.reason}</p>
+            `;
+        } else {
+            suggestedCards = hint.move.cards;
+            hintHTML += `
+                <p><strong>🎯 Recommended Move (heuristic fallback):</strong> ${hint.move.type.toUpperCase()}</p>
+                <div class="hint-cards">
+                    ${hint.move.cards.map(card => `
+                        <span class="hint-card" style="color: ${card.color}">
+                            ${card.rank}${card.suit}
+                        </span>
+                    `).join('')}
+                </div>
+                <p><strong>📊 Strategy:</strong> ${hint.reason}</p>
+                <p><strong>💡 Tip:</strong> ${hint.recommendation}</p>
+            `;
+        }
+    }
+
+    // Best hand decompositions from the min-hands solver (the "split cards"
+    // approach of Bobgy's poker-guandan-strategy)
     try {
         const rawCards = hand.map(card => GuandanStrategy.convertCardToRaw(card));
         const mainRankValue = GuandanStrategy.convertLevelToValue(game.currentLevel);
@@ -961,22 +1374,22 @@ function showHint() {
             cards: rawCards,
             mainRank: mainRankValue,
             morePlans: true,
-            scorer: 'HEURISTICS'
+            scorer: 'HANDS'
         });
-        
+
         if (plans && plans.length > 0) {
             hintHTML += `
                 <hr style="margin: 15px 0; border: none; border-top: 1px solid #667eea;">
-                <h4 style="margin-bottom: 10px; color: #fbbf24;">🃏 Split Hand Candidates (Top ${Math.min(plans.length, 3)})</h4>
+                <h4 style="margin-bottom: 10px; color: #fbbf24;">🃏 Best Hand Decompositions (min ${plans[0].score} hands${plans.length > 1 ? `, ${plans.length} variants` : ''})</h4>
             `;
-            
+
             const numToShow = Math.min(plans.length, 3);
             for (let i = 0; i < numToShow; i++) {
                 hintHTML += `
                     <div style="margin-top: 12px; background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(102, 126, 234, 0.3);">
                         <div style="font-weight: bold; color: #a3b8ff; margin-bottom: 8px; font-size: 13px; display: flex; justify-content: space-between;">
-                            <span>Candidate Plan #${i + 1}</span>
-                            <span style="font-size: 12px; color: #fbbf24;">Score: ${plans[i].score.toFixed(1)}</span>
+                            <span>Plan #${i + 1}</span>
+                            <span style="font-size: 12px; color: #fbbf24;">Hands: ${plans[i].score}</span>
                         </div>
                         ${formatSplitPlan(plans[i])}
                     </div>
@@ -990,7 +1403,7 @@ function showHint() {
             <p style="color: #ef4444;">Could not run split cards solver: ${e.message}</p>
         `;
     }
-    
+
     // Show combo breakdown
     if (Object.keys(analysis.comboTypes).length > 0) {
         hintHTML += `
@@ -1003,13 +1416,13 @@ function showHint() {
         }
         hintHTML += `</ul>`;
     }
-    
+
     hintArea.innerHTML = hintHTML;
     hintArea.classList.remove('hidden');
-    
+
     // Highlight suggested cards
-    if (hint.action === 'play' && hint.move) {
-        highlightSuggestedCards(hint.move.cards);
+    if (suggestedCards) {
+        highlightSuggestedCards(suggestedCards);
     }
 }
 
@@ -1080,6 +1493,14 @@ function highlightSuggestedCards(cards) {
         document.head.appendChild(style);
     }
     
-    // Highlight suggested cards (simplified - would need card matching logic)
-    console.log('AI suggests playing:', cards.map(c => `${c.rank}${c.suit}`).join(', '));
+    // Highlight suggested cards in the rendered hand (South position)
+    const handArea = document.getElementById('hand-south');
+    if (handArea) {
+        const ids = new Set(cards.map(c => c.isJoker ? (c.isSmall ? 'BJ' : 'RJ') : `${c.rank}${c.suit}`));
+        for (const el of handArea.children) {
+            if (ids.has(el.dataset.cardId)) {
+                el.classList.add('card-highlight');
+            }
+        }
+    }
 }

@@ -204,6 +204,42 @@ def alphabeta(state, depth, alpha, beta, maximizing):
 
 ---
 
+### 4. Min-Hands Decomposition Solver (implemented)
+
+Ported from `cg/gruandan_strategy.js`, which follows
+[Bobgy/poker-guandan-strategy](https://github.com/Bobgy/poker-guandan-strategy)'s
+`strategy.cpp` ("dfs with heavy pruning"). It computes the minimum number of
+hands needed to empty a hand, treating bombs, straight flushes and jokers as
+~free plays (they can almost always be played).
+
+**Lower bound** (`min_hands_bound`) — cheap, admissible, used for both pruning
+and position evaluation. With `cnt1/cnt2/cnt3` = number of ranks holding
+exactly 1/2/3 cards (jokers and 4+-of-a-kind excluded) and `w` wild cards:
+
+```python
+min_hands = cnt1 + max(cnt2, cnt3)   # pairs ride with triples as full houses
+
+# wild cards improve the bound (recursion, w <= 2):
+#   single -> pair, pair -> triple, triple -> bomb, or the wild played alone
+```
+
+**Exact search** (`calc_best_plan`) — DFS extracts hands in a canonical order
+(straight flush → bombs → plates → tubes → straights → pairs → triples → full
+houses, each over ranks A…red joker) so every decomposition is visited exactly
+once, and prunes a subtree whenever `accumulated_cost + bound(remaining)` can
+no longer beat the best plan found. Wild cards fill gaps in sequences and
+complete sets. Full 27-card hands solve in ~2 ms.
+
+**Used by:**
+- `Evaluator.evaluate_position` — the bound is added for the actor and their
+  partner, subtracted for opponents (fewer hands left = closer to winning)
+- `MinHandsAI` — leads with the weakest bounded play of the best plan; when
+  following, evaluates each legal beat by the exact min-hands of the remainder
+  (candidates pre-sorted by bound, branch-and-bound across candidates), and
+  passes when the partner leads and no beat improves the decomposition
+
+---
+
 ## Evaluation Functions
 
 ### Hand Strength
